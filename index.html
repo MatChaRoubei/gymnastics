@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="武术操小游戏难度选择" />
+    <title>武术操 · 选择难度</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="game" id="game">
+      <section class="screen difficulty-screen" id="difficulty-screen" aria-labelledby="game-title">
+        <div class="difficulty-panel" aria-label="难度选择">
+        <p class="eyebrow">WUSHU EXERCISE</p>
+        <h1 id="game-title">武术操挑战</h1>
+        <p class="subtitle">选择你的训练难度</p>
+
+        <div class="difficulty-list">
+          <button class="difficulty-button easy" id="easy-button" data-level="easy" type="button">
+            <span class="button-kicker">新手入门</span>
+            <span class="button-label">简单</span>
+          </button>
+
+          <button class="difficulty-button easy" data-level="normal" type="button">
+            <span class="button-kicker">进阶训练</span>
+            <span class="button-label">普通</span>
+          </button>
+
+          <button class="difficulty-button easy" data-level="hard" type="button">
+            <span class="button-kicker">高手试炼</span>
+            <span class="button-label">困难</span>
+          </button>
+        </div>
+        <div class="menu-extras">
+          <label><input id="quick-mode" type="checkbox" /> 直接练习（跳过开场）</label>
+          <p id="personal-best">最高成绩保存在当前浏览器</p>
+          <p id="achievement-summary">成就：0 / 5</p>
+          <button type="button" id="help-button">玩法与设置</button>
+        </div>
+        </div>
+      </section>
+
+      <section class="screen character-screen" id="character-screen" aria-labelledby="character-title" hidden>
+        <div class="character-header">
+          <button class="back-button" id="back-button" type="button">← 返回</button>
+          <p class="eyebrow" id="selected-level">简单模式</p>
+          <h2 id="character-title">选择你的角色</h2>
+          <p>选择后即刻开始第一节武术操。</p>
+        </div>
+        <div class="character-list" role="list">
+          <button class="character-card male" type="button" data-character="男同学" role="listitem">
+            <img src="resources/character/male_back_start.png" alt="男同学角色" />
+            <span>男同学</span>
+          </button>
+          <button class="character-card female" type="button" data-character="女同学" role="listitem">
+            <img src="resources/character/female_back_start.png" alt="女同学角色" />
+            <span>女同学</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="screen sight-screen" id="sight-screen" aria-labelledby="sight-title" hidden>
+        <div class="story-tools">
+          <button id="story-log" type="button">回看</button>
+          <button id="story-skip" type="button">跳至练习</button>
+          <button id="story-home" type="button">返回菜单</button>
+        </div>
+        <span class="chapter-label" id="chapter-label">第一幕 · 初来乍到</span>
+        <div class="jiahao-character" id="jiahao-character" aria-hidden="true">
+          <img class="jiahao-image jiahao-back" src="resources/character/jiahao_back_start.png" alt="" />
+          <img class="jiahao-image jiahao-front" src="resources/character/jiahao_front_start.png" alt="" />
+        </div>
+        <div class="novel-dialogue" id="novel-dialogue" role="button" tabindex="0" aria-label="点击、按空格或回车继续对话">
+          <p class="speaker" id="speaker" aria-hidden="true"></p>
+          <p class="dialogue-text" id="sight-title" aria-live="polite"></p>
+          <span class="continue-mark" aria-hidden="true">▼</span>
+        </div>
+      </section>
+
+      <section id="practice" class="practice" hidden aria-labelledby="practice-title">
+        <div class="practice-panel">
+          <p class="eyebrow">武术操 · 入门练习</p>
+          <h2 id="practice-title">跟上这一拍</h2>
+          <p id="practice-help">每一式的目标拍不同，观察发光拍点，按空格、Enter 或点击出招。</p>
+          <div class="style-choice" id="style-choice" aria-label="选择行拳风格">
+            <button type="button" data-style="steady"><strong>守势</strong><small>判定更宽 · 得分略低</small></button>
+            <button type="button" data-style="fierce"><strong>刚势</strong><small>得分更高 · 讲究精准</small></button>
+            <button type="button" data-style="flowing"><strong>游势</strong><small>连击聚气更快</small></button>
+          </div>
+          <div class="practice-stats"><span id="practice-progress">12 招 · 约 36 秒</span><span id="practice-score">0 分 · 0 连击</span></div>
+          <div class="spirit-row"><span>少年意气</span><div class="spirit-track"><i id="spirit-fill"></i></div><span id="spirit-value">0%</span></div>
+          <h3 id="move-name">抱拳礼 · 弓步冲拳 · 黑虎掏心 · 收势</h3>
+          <img id="move-sprite" alt="招式演示" hidden />
+          <p id="move-tip">光点进入金色区域时出招，越接近中心越精准。</p>
+          <div class="beat-labels"><span>一 · 预备</span><span>二 · 蓄势</span><span>三 · 出招</span><span>四 · 收势</span></div>
+          <div class="beat-track"><span class="beat-window"></span><span id="beat-dot"></span></div>
+          <div id="combo-callout" aria-hidden="true"></div>
+          <p id="practice-feedback" role="status">准备好了就开始吧。</p>
+          <div class="practice-actions">
+            <button id="practice-start" type="button">开始练习</button>
+            <button id="practice-hit" type="button" hidden>出招</button>
+            <button id="practice-pause" type="button" hidden>暂停</button>
+            <button id="practice-continue" type="button" hidden>继续剧情</button>
+            <button id="practice-exit" type="button">退出练习</button>
+          </div>
+        </div>
+      </section>
+      <div class="transition" id="transition" aria-hidden="true"></div>
+      <button class="music-toggle" id="music-toggle" type="button">开启音乐</button>
+      <audio id="menu-audio" src="resources/sound/music/menu.mp3" loop preload="auto"></audio>
+      <audio id="peace-audio" src="resources/sound/music/peace.mp3" loop preload="auto"></audio>
+      <audio id="voice-audio" preload="auto"></audio>
+      <dialog id="info-dialog">
+        <h2 id="info-title">玩法与设置</h2>
+        <div id="info-body"></div>
+        <div id="settings-controls">
+          <label>文字速度 <select id="text-speed"><option value="65">慢</option><option value="40">标准</option><option value="20">快</option><option value="0">整句</option></select></label>
+          <label>音乐音量 <input id="music-volume" type="range" min="0" max="50" value="24" /></label>
+          <label><input id="motion-toggle" type="checkbox" /> 减少画面晃动</label>
+        </div>
+        <form method="dialog"><button>关闭</button></form>
+      </dialog>
+    </main>
+    <script src="config.js"></script>
+    <script src="practice.js"></script>
+    <script src="story.js"></script>
+    <script src="game.js"></script>
+  </body>
+</html>

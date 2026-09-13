@@ -1,0 +1,33 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node / build 缓存（项目无构建步骤，提前预留）
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 测试与本地日志
+*.log
+*.tmp
+playwright-report/
+test-results/
+.cache/
+
+# 大文件/资源原型（按需启停；当前资源全部提交）
+# resources/**/*.psd
+# resources/**/*~
+
+# 系统隐藏 / 元数据
+._*
+Spotlight-V100/
+Trashes/
