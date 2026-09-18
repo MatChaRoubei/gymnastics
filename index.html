@@ -3,39 +3,58 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="武术操小游戏难度选择" />
-    <title>武术操 · 选择难度</title>
+    <meta name="description" content="一场从高中操场开始的原创武术校园冒险。读势、观察、练习八式，和嘉豪接住彼此的下一拍。" />
+    <meta name="theme-color" content="#102e50" />
+    <title>武术操挑战 · 同频少年</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="journey.css" />
+    <link rel="stylesheet" href="practice-extra.css" />
+    <link rel="stylesheet" href="adventure.css" />
+    <link rel="stylesheet" href="forms.css" />
   </head>
   <body>
     <main class="game" id="game">
       <section class="screen difficulty-screen" id="difficulty-screen" aria-labelledby="game-title">
         <div class="difficulty-panel" aria-label="难度选择">
-        <p class="eyebrow">WUSHU EXERCISE</p>
+        <p class="eyebrow">同频少年 · 校园第一日</p>
         <h1 id="game-title">武术操挑战</h1>
-        <p class="subtitle">选择你的训练难度</p>
+        <p class="subtitle">江湖很远，操场很近。你的第一招，从这一拍开始。</p>
+        <ol class="journey-steps" aria-label="故事篇章">
+          <li><span>01</span> 校门奇遇</li><li><span>02</span> 八式百炼</li><li><span>03</span> 风中名单</li><li><span>04</span> 拆招接拍</li>
+        </ol>
+        <p class="difficulty-caption">选择难度，开始新故事</p>
 
         <div class="difficulty-list">
           <button class="difficulty-button easy" id="easy-button" data-level="easy" type="button">
             <span class="button-kicker">新手入门</span>
             <span class="button-label">简单</span>
+            <span class="level-detail">慢拍 · 宽松判定</span>
           </button>
 
           <button class="difficulty-button easy" data-level="normal" type="button">
             <span class="button-kicker">进阶训练</span>
             <span class="button-label">普通</span>
+            <span class="level-detail">稳拍 · 连式进阶</span>
           </button>
 
           <button class="difficulty-button easy" data-level="hard" type="button">
             <span class="button-kicker">高手试炼</span>
             <span class="button-label">困难</span>
+            <span class="level-detail">快拍 · 精准试炼</span>
           </button>
         </div>
         <div class="menu-extras">
-          <label><input id="quick-mode" type="checkbox" /> 直接练习（跳过开场）</label>
+          <label><input id="quick-mode" type="checkbox" /> 直接挑战（跳过开场）</label>
+          <label id="practice-mode-label" hidden>直接挑战 <select id="practice-mode"><option value="forms">八式百炼 · 综合</option><option value="standard">八式巡礼 · 节奏</option><option value="relay">嘉豪接拍 · 节奏</option><option value="paper">风中名单 · 观察</option><option value="spar">拆招预演 · 策略</option></select></label>
+          <div class="menu-links">
+            <button type="button" id="resume-button" hidden>继续故事</button>
+            <button type="button" id="tutorial-button">初学 · 找到节拍</button>
+            <button type="button" id="journal-button">习武手记</button>
+            <button type="button" id="help-button">玩法与设置</button>
+          </div>
+          <p id="save-status" role="status">剧情自动存档 · 挑战随时可重来</p>
           <p id="personal-best">最高成绩保存在当前浏览器</p>
-          <p id="achievement-summary">成就：0 / 5</p>
-          <button type="button" id="help-button">玩法与设置</button>
+          <p id="achievement-summary">成就：0 / 10</p>
         </div>
         </div>
       </section>
@@ -45,7 +64,7 @@
           <button class="back-button" id="back-button" type="button">← 返回</button>
           <p class="eyebrow" id="selected-level">简单模式</p>
           <h2 id="character-title">选择你的角色</h2>
-          <p>选择后即刻开始第一节武术操。</p>
+          <p id="character-subtitle">同一个操场，两种开场白。招式与判定相同。</p>
         </div>
         <div class="character-list" role="list">
           <button class="character-card male" type="button" data-character="男同学" role="listitem">
@@ -62,10 +81,12 @@
       <section class="screen sight-screen" id="sight-screen" aria-labelledby="sight-title" hidden>
         <div class="story-tools">
           <button id="story-log" type="button">回看</button>
+          <button id="story-settings" type="button">设置</button>
           <button id="story-skip" type="button">跳至练习</button>
           <button id="story-home" type="button">返回菜单</button>
         </div>
         <span class="chapter-label" id="chapter-label">第一幕 · 初来乍到</span>
+        <div class="story-status"><span id="bond-status">同窗 · 初识</span><span id="chapter-progress"></span></div>
         <div class="jiahao-character" id="jiahao-character" aria-hidden="true">
           <img class="jiahao-image jiahao-back" src="resources/character/jiahao_back_start.png" alt="" />
           <img class="jiahao-image jiahao-front" src="resources/character/jiahao_front_start.png" alt="" />
@@ -75,12 +96,105 @@
           <p class="dialogue-text" id="sight-title" aria-live="polite"></p>
           <span class="continue-mark" aria-hidden="true">▼</span>
         </div>
+        <div class="story-choice" id="story-choice" aria-labelledby="choice-prompt" hidden>
+          <p class="eyebrow">这一刻，由你来选</p>
+          <h2 id="choice-prompt"></h2>
+          <div id="choice-options"></div>
+          <p class="choice-note">你的回应会被记住，也会改变这一天的结尾。</p>
+        </div>
+      </section>
+
+      <section class="screen ending-screen" id="ending-screen" aria-labelledby="ending-title" hidden>
+        <div class="ending-card">
+          <p class="eyebrow">校园第一日 · 完</p>
+          <div class="ending-seal" aria-hidden="true">合</div>
+          <h2 id="ending-title"></h2>
+          <p id="ending-description"></p>
+          <div id="ending-stats" class="ending-stats"></div>
+          <blockquote id="ending-quote"></blockquote>
+          <p id="ending-unlock" role="status"></p>
+          <div class="ending-actions">
+            <button type="button" id="ending-relay">再战嘉豪接拍</button>
+            <button type="button" id="ending-journal">打开习武手记</button>
+            <button type="button" id="ending-home">回到校园菜单</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="forms" class="forms" hidden aria-labelledby="forms-title">
+        <div class="forms-shell">
+          <header class="forms-heading">
+            <div><p class="eyebrow">八脉致敬 · 动作游艺</p><h2 id="forms-title">八式百炼</h2></div>
+            <div class="forms-hud" aria-label="百炼状态"><span id="forms-step">第 1 / 8 式</span><span id="forms-score">0 分</span><span id="forms-time">准备</span></div>
+          </header>
+          <div class="forms-progress" aria-hidden="true"><i id="forms-progress-fill"></i></div>
+          <div id="forms-stage" class="forms-stage" data-game="salute">
+            <div class="forms-intro">
+              <span id="forms-seal">礼</span>
+              <div><p id="forms-heritage">地术拳意象 · 低势稳根</p><h3 id="forms-move">抱拳礼</h3><p id="forms-instruction">左右交替合拍，完成抱拳礼。</p></div>
+            </div>
+            <div id="forms-playfield" class="forms-playfield" aria-live="polite"></div>
+            <section id="forms-round-result" class="forms-round-result" hidden>
+              <strong id="forms-round-mark">精准</strong><h3 id="forms-round-title">抱拳礼完成</h3><p id="forms-round-detail"></p>
+            </section>
+            <section id="forms-final" class="forms-final" hidden>
+              <div id="forms-grade">A</div><div><h3>八式百炼完成</h3><p id="forms-final-summary"></p></div>
+              <div id="forms-score-grid" class="forms-score-grid"></div><p id="forms-unlocks"></p>
+            </section>
+          </div>
+          <p id="forms-feedback" role="status">八式会使用八种不同的操作方式。</p>
+          <div class="forms-controls">
+            <button type="button" id="forms-start">开始百炼</button>
+            <button type="button" id="forms-next" hidden>下一式</button>
+            <button type="button" id="forms-pause" hidden>暂停</button>
+            <button type="button" id="forms-continue" hidden>继续剧情</button>
+            <button type="button" id="forms-exit">退出百炼</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="adventure" class="adventure" hidden aria-labelledby="adventure-title">
+        <div class="adventure-shell">
+          <header class="adventure-heading">
+            <div><p class="eyebrow" id="adventure-kicker">课间挑战</p><h2 id="adventure-title">风中名单</h2></div>
+            <div class="adventure-hud" aria-label="挑战状态"><span id="adventure-primary">0 / 0</span><span id="adventure-secondary">准备</span><span id="adventure-score">0 分</span></div>
+          </header>
+          <p id="adventure-help">观察场面，完成这次课间挑战。</p>
+          <div id="adventure-stage" class="adventure-stage">
+            <div id="paper-field" class="paper-field" hidden aria-label="被风吹散的名单"></div>
+            <div id="spar-field" class="spar-field" hidden>
+              <div class="spar-arena">
+                <div class="player-marker"><span>我</span><small id="player-composure">定力 ◆◆◆</small></div>
+                <div id="spar-cue" class="spar-cue" aria-live="polite"><span id="cue-kind">候</span><strong id="cue-title">观察嘉豪的起势</strong><p id="cue-text">动作出现后，选择合适的回应。</p></div>
+                <img src="resources/character/jiahao_front_start.png" alt="嘉豪正在示范" />
+              </div>
+              <p class="counter-guide"><span>直来宜让</span><span>虚引宜守</span><span>绕侧宜截</span></p>
+              <div id="tactic-options" class="tactic-options" aria-label="选择回应"></div>
+              <div class="spar-actions"><button type="button" id="insight-button">凝神观察（2 洞察）</button><button type="button" id="adventure-next" hidden>下一回合</button></div>
+            </div>
+            <section id="adventure-result" class="adventure-result" hidden aria-label="挑战结算">
+              <div id="adventure-grade">A</div><div><h3 id="adventure-result-title">挑战完成</h3><p id="adventure-result-summary"></p></div>
+              <p id="adventure-result-detail"></p><p id="adventure-unlocks"></p>
+            </section>
+          </div>
+          <p id="adventure-feedback" role="status">准备好后开始。</p>
+          <div class="adventure-controls">
+            <button type="button" id="adventure-start">开始挑战</button>
+            <button type="button" id="adventure-pause" hidden>暂停</button>
+            <button type="button" id="adventure-continue" hidden>继续剧情</button>
+            <button type="button" id="adventure-exit">退出挑战</button>
+          </div>
+        </div>
       </section>
 
       <section id="practice" class="practice" hidden aria-labelledby="practice-title">
         <div class="practice-panel">
           <p class="eyebrow">武术操 · 入门练习</p>
           <h2 id="practice-title">跟上这一拍</h2>
+          <div class="heritage-ribbon" aria-label="致敬的福州本土拳种">
+            <span>地术拳</span><span>六合门</span><span>虎尊拳</span><span>香店拳</span>
+            <span>鸣鹤拳</span><span>檀家拳</span><span>咏春拳</span><span>罗汉拳</span>
+          </div>
           <p id="practice-help">每一式的目标拍不同，观察发光拍点，按空格、Enter 或点击出招。</p>
           <div class="style-choice" id="style-choice" aria-label="选择行拳风格">
             <button type="button" data-style="steady"><strong>守势</strong><small>判定更宽 · 得分略低</small></button>
@@ -106,9 +220,14 @@
         </div>
       </section>
       <div class="transition" id="transition" aria-hidden="true"></div>
-      <button class="music-toggle" id="music-toggle" type="button">开启音乐</button>
+      <button class="music-toggle" id="music-toggle" type="button" aria-label="切换游戏声音">开启声音</button>
       <audio id="menu-audio" src="resources/sound/music/menu.mp3" loop preload="auto"></audio>
       <audio id="peace-audio" src="resources/sound/music/peace.mp3" loop preload="auto"></audio>
+      <audio id="school-audio" loop preload="auto"></audio>
+      <audio id="action-audio" loop preload="auto"></audio>
+      <audio id="comedy-audio" loop preload="auto"></audio>
+      <audio id="suspense-audio" loop preload="auto"></audio>
+      <audio id="ending-audio" loop preload="auto"></audio>
       <audio id="voice-audio" preload="auto"></audio>
       <dialog id="info-dialog">
         <h2 id="info-title">玩法与设置</h2>
@@ -120,10 +239,18 @@
         </div>
         <form method="dialog"><button>关闭</button></form>
       </dialog>
+      <dialog id="journal-dialog" aria-labelledby="journal-title">
+        <div class="journal-heading"><div><p class="eyebrow">每一拍，都算数</p><h2 id="journal-title">习武手记</h2></div><form method="dialog"><button aria-label="关闭习武手记">关闭</button></form></div>
+        <p id="journal-summary"></p>
+        <nav class="journal-tabs" aria-label="手记内容"><button type="button" data-journal="moves" aria-pressed="true">八式图鉴</button><button type="button" data-journal="records" aria-pressed="false">成长记录</button><button type="button" data-journal="endings" aria-pressed="false">校园回忆</button></nav>
+        <div id="journal-content"></div>
+      </dialog>
     </main>
     <script src="config.js"></script>
     <script src="practice.js"></script>
+    <script src="adventure.js"></script>
+    <script src="forms.js"></script>
     <script src="story.js"></script>
-    <script src="game.js"></script>
+    <script src="journey.js"></script>
   </body>
 </html>

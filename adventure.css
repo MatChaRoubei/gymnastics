@@ -1,0 +1,171 @@
+.adventure {
+  position: fixed;
+  z-index: 8;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 62px 18px 22px;
+  background: #04162bbd;
+}
+.adventure[hidden] { display: none; }
+.adventure-shell {
+  width: min(1040px, 100%);
+  padding: clamp(17px, 3vw, 28px);
+  border: 2px solid #ead28e;
+  border-radius: 24px;
+  color: #eef5fb;
+  background: #082444f2;
+  box-shadow: 0 24px 80px #0009;
+}
+.adventure-heading { display: flex; justify-content: space-between; align-items: end; gap: 16px; }
+.adventure-heading h2 { margin: 5px 0 0; color: #ffe39a; font: 900 clamp(28px, 4vw, 42px) KaiTi, STFangsong, serif; letter-spacing: .07em; }
+.adventure-hud { display: flex; flex-wrap: wrap; justify-content: end; gap: 7px; }
+.adventure-hud span { min-width: 80px; padding: 8px 12px; border: 1px solid #ffffff35; border-radius: 999px; background: #03162bbf; font-size: 13px; text-align: center; }
+#adventure-primary { color: #ffe397; font-weight: 800; }
+#adventure-help { margin: 10px 0 15px; color: #bed0e1; line-height: 1.65; }
+.adventure-stage {
+  position: relative;
+  min-height: min(54vh, 490px);
+  overflow: hidden;
+  border: 1px solid #ffffff3d;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, #03172c22, #03172c77),
+    var(--adventure-bg, url("resources/scene/sight/yard_assembly.png")) center / cover no-repeat;
+  box-shadow: inset 0 0 55px #00152e55;
+}
+.paper-field { position: absolute; inset: 0; perspective: 800px; }
+.paper-wind {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: #fff1be;
+  background: #061a32c7;
+  transform: translateX(-50%);
+  font-size: 13px;
+  pointer-events: none;
+}
+.flying-paper {
+  position: absolute;
+  left: var(--paper-x);
+  top: var(--paper-y);
+  display: grid;
+  width: clamp(72px, 9vw, 104px);
+  min-height: clamp(82px, 10vw, 118px);
+  padding: 9px 7px;
+  place-content: center;
+  border: 1px solid #d7cba9;
+  border-radius: 4px 12px 6px 9px;
+  color: #243448;
+  background: linear-gradient(135deg, #fffdf2, #e9e2c8);
+  box-shadow: 0 9px 18px #00102066, inset -5px -5px 0 #d8cfaf55;
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  transform: translate(-50%, -50%) rotate(var(--paper-rotation));
+  animation: paper-drift var(--paper-speed) ease-in-out var(--paper-delay) infinite alternate;
+  touch-action: manipulation;
+}
+.flying-paper::after { content: ""; position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: #cfb970; }
+.flying-paper strong { color: #a33229; font: 900 clamp(20px, 3vw, 31px) KaiTi, serif; }
+.flying-paper span { margin-top: 4px; font-size: 11px; line-height: 1.3; }
+.flying-paper.decoy { color: #4d3c25; background: linear-gradient(135deg, #fff1c9, #d9c38e); }
+.flying-paper.decoy strong { color: #7a5225; font-size: clamp(15px, 2vw, 21px); }
+.flying-paper:hover, .flying-paper:focus-visible { z-index: 3; outline: 4px solid #ffe17b; outline-offset: 3px; filter: brightness(1.06); }
+.flying-paper.wrong { animation: paper-wrong .35s ease; outline: 4px solid #ff796f; }
+.flying-paper.captured { pointer-events: none; animation: paper-captured .38s ease-in forwards; }
+@keyframes paper-drift { from { margin: -5px 0 0 -8px; transform: translate(-50%, -50%) rotate(var(--paper-rotation)); } to { margin: 8px 0 0 12px; transform: translate(-50%, -50%) rotate(calc(var(--paper-rotation) + 7deg)); } }
+@keyframes paper-wrong { 30%, 70% { margin-left: -9px; } 50% { margin-left: 9px; } }
+@keyframes paper-captured { to { opacity: 0; transform: translate(-50%, -50%) scale(.3) rotate(18deg); } }
+
+.spar-field { position: absolute; inset: 0; display: grid; grid-template-rows: 1fr auto auto; align-content: end; padding: clamp(12px, 2.5vw, 24px); background: linear-gradient(180deg, #06172b26, #06172bcc); }
+.spar-arena { display: grid; grid-template-columns: minmax(110px, .7fr) minmax(230px, 1.6fr) minmax(130px, .8fr); align-items: end; gap: 18px; min-height: 245px; }
+.spar-arena > img { justify-self: center; width: min(21vw, 220px); max-height: 265px; object-fit: contain; object-position: bottom; filter: drop-shadow(0 12px 10px #00102077); }
+.player-marker { align-self: center; justify-self: center; display: grid; gap: 8px; justify-items: center; color: #e9f4ff; }
+.player-marker > span { display: grid; width: 72px; height: 72px; place-items: center; border: 2px solid #82d8ed; border-radius: 50%; color: #b9f4ff; background: #0b3850dd; font: 900 35px KaiTi, serif; box-shadow: 0 0 30px #4bc5e755; }
+.player-marker small { padding: 6px 9px; border-radius: 999px; background: #06182dc7; }
+.spar-cue { align-self: center; padding: 19px; border: 1px solid #f5d987; border-radius: 16px; background: #071d38e8; box-shadow: 0 12px 35px #0007; text-align: center; }
+.spar-cue > span { display: grid; width: 52px; height: 52px; margin: 0 auto 9px; place-items: center; border: 2px solid currentColor; border-radius: 50%; color: #ffe28b; font: 900 27px KaiTi, serif; }
+.spar-cue[data-pattern="straight"] > span { color: #ff9a72; }
+.spar-cue[data-pattern="bait"] > span { color: #7fdef2; }
+.spar-cue[data-pattern="circle"] > span { color: #c4a5ff; }
+.spar-cue strong { color: #ffe9ab; font-size: 19px; }
+.spar-cue p { margin: 9px 0 0; color: #c6d6e6; line-height: 1.6; }
+.counter-guide { display: flex; justify-content: center; gap: 12px; margin: 8px 0; color: #d4e0ec; font-size: 12px; }
+.counter-guide span { padding: 4px 10px; border-radius: 999px; background: #071a30bb; }
+.tactic-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.tactic-card { display: grid; gap: 4px; min-height: 75px; padding: 11px 8px; border: 1px solid #ffffff51; border-radius: 12px; color: #eaf3fb; background: #113c62e8; cursor: pointer; font: inherit; }
+.tactic-card strong { color: #ffe6a0; font-size: 17px; }
+.tactic-card small { opacity: .75; }
+.tactic-card:hover, .tactic-card:focus-visible { border-color: #ffe58e; outline: 2px solid #ffe58e; outline-offset: 2px; transform: translateY(-2px); }
+.tactic-card.recommended { border-color: #7ce2ba; background: #17634f; box-shadow: 0 0 22px #55d6a74d; }
+.tactic-card.correct { border-color: #7ce2ba; background: #17634f; }
+.tactic-card.wrong { border-color: #ff867c; background: #6d2830; }
+.tactic-card:disabled { cursor: default; opacity: .72; transform: none; }
+.spar-actions { display: flex; justify-content: center; gap: 10px; margin-top: 9px; }
+.spar-actions button { padding: 8px 13px; border: 1px solid #ffe39a88; border-radius: 9px; color: #edf5fc; background: #163b5e; cursor: pointer; font: inherit; }
+.spar-actions button:disabled { opacity: .45; cursor: default; }
+
+.adventure-result { position: absolute; z-index: 6; inset: 0; display: grid; grid-template-columns: auto 1fr; place-content: center; gap: 14px 20px; padding: clamp(24px, 6vw, 70px); color: #edf6ff; background: #05182eea; text-align: left; backdrop-filter: blur(8px); }
+.adventure-result[hidden] { display: none; }
+#adventure-grade { display: grid; width: 92px; height: 92px; grid-row: span 2; place-items: center; border: 3px solid #ffe08c; border-radius: 50%; color: #ffe08c; font: 900 58px KaiTi, serif; box-shadow: 0 0 35px #f9cc5d40; }
+.adventure-result h3 { margin: 4px 0; color: #ffe39b; font: 900 clamp(26px, 4vw, 39px) KaiTi, serif; }
+.adventure-result p { margin: 4px 0; color: #c9d9e7; line-height: 1.65; }
+#adventure-result-detail, #adventure-unlocks { grid-column: 1 / -1; }
+#adventure-unlocks { color: #8fe0c1; }
+#adventure-feedback { min-height: 27px; margin: 14px 0; color: #ffe3a0; font-size: 18px; text-align: center; }
+.adventure-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.adventure-controls button { min-width: 118px; min-height: 45px; padding: 10px 18px; border: 1px solid #ffe49a; border-radius: 11px; color: #142744; background: #e8be63; cursor: pointer; font: inherit; font-weight: 800; }
+.adventure-controls button:last-child { color: #f0f5fa; background: #173a5c; }
+.adventure[data-state="paused"] .adventure-stage::after { content: "已暂停"; position: absolute; z-index: 8; inset: 0; display: grid; place-items: center; color: #ffe49b; background: #04172dd9; font: 900 36px KaiTi, serif; }
+
+@media (max-width: 650px) {
+  .adventure { place-items: start center; padding: 58px 8px 14px; }
+  .adventure-shell { padding: 14px 10px; border-radius: 17px; }
+  .adventure-heading { align-items: start; }
+  .adventure-hud { max-width: 165px; gap: 4px; }
+  .adventure-hud span { min-width: 76px; padding: 5px 7px; font-size: 10px; }
+  #adventure-help { margin: 7px 0 10px; font-size: 12px; }
+  .adventure-stage { min-height: 470px; }
+  .flying-paper { width: 68px; min-height: 79px; padding: 6px 4px; }
+  .spar-field { padding: 9px; }
+  .spar-arena { grid-template-columns: 68px 1fr 80px; gap: 6px; min-height: 245px; }
+  .spar-arena > img { width: 92px; max-height: 220px; }
+  .player-marker > span { width: 48px; height: 48px; font-size: 25px; }
+  .player-marker small { padding: 4px; font-size: 9px; text-align: center; }
+  .spar-cue { padding: 12px 8px; }
+  .spar-cue > span { width: 38px; height: 38px; font-size: 20px; }
+  .spar-cue strong { font-size: 14px; }
+  .spar-cue p { font-size: 11px; }
+  .counter-guide { gap: 4px; }
+  .counter-guide span { padding: 3px 5px; font-size: 9px; }
+  .tactic-options { gap: 5px; }
+  .tactic-card { min-height: 67px; padding: 8px 3px; }
+  .tactic-card strong { font-size: 14px; }
+  .tactic-card small { font-size: 9px; }
+  .adventure-result { padding: 25px 18px; }
+  #adventure-grade { width: 66px; height: 66px; font-size: 40px; }
+  #adventure-feedback { margin: 10px 0; font-size: 15px; }
+  .adventure-controls { gap: 6px; }
+  .adventure-controls button { min-width: 0; padding: 9px 12px; }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .adventure { place-items: start center; padding: 50px 10px 10px; }
+  .adventure-shell { padding: 10px 14px; }
+  .adventure-heading h2 { font-size: 27px; }
+  #adventure-help { display: none; }
+  .adventure-stage { min-height: 320px; }
+  .spar-arena { min-height: 170px; }
+  .spar-arena > img { max-height: 170px; }
+  .spar-cue { padding: 9px; }
+  #adventure-feedback { margin: 7px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flying-paper { animation: none; }
+  .tactic-card { transition: none; }
+}
