@@ -1,0 +1,70 @@
+/* 校园手册：复用现有背景，不引入字体和图片请求。 */
+:root { --campus-ink: #20364a; --campus-paper: #fff9e9; --campus-red: #b74632; }
+button, select, input, summary { touch-action: manipulation; }
+button:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid #ce5935; outline-offset: 4px; }
+.difficulty-screen { padding: 70px 18px 28px; }
+.difficulty-panel { position: relative; width: min(790px, 100%); padding: clamp(22px, 4vw, 38px); color: var(--campus-ink); border: 1px solid #e3d6b8; border-top: 7px solid var(--campus-ink); border-radius: 6px 6px 20px 6px; background: var(--campus-paper); box-shadow: 7px 9px 0 #19304770; backdrop-filter: none; }
+.difficulty-panel .eyebrow { color: #626b6e; }
+.difficulty-panel h1 { color: var(--campus-ink); text-shadow: none; font-size: clamp(34px, 6vw, 54px); }
+.difficulty-panel .subtitle { color: #4c5d67; line-height: 1.75; margin: 12px 0; }
+.campus-stamp { display: inline-block; padding: 4px 10px; margin: 0; border: 2px solid var(--campus-red); color: var(--campus-red); font-size: 12px; font-weight: 800; transform: rotate(-3deg); }
+.journey-steps { max-width: none; color: #536673; padding: 14px 0; border-block: 1px dashed #bfc3b9; }
+.journey-steps span { color: var(--campus-red); }
+.journey-steps li:not(:last-child)::after { display: none; }
+.difficulty-caption { color: var(--campus-ink); margin: 20px 0 6px; }
+.difficulty-note { font-size: 12px; line-height: 1.6; color: #586773; margin: 0 0 16px; }
+.difficulty-list { gap: 12px; }
+.difficulty-button { min-width: 0; flex: 1; min-height: 115px; padding: 15px 8px; border: 2px solid #20364a; border-radius: 8px; color: #fff9e9; background: #20364a; box-shadow: 0 4px 0 #10202e; }
+.difficulty-button[data-level="normal"] { background: #356759; border-color: #356759; }
+.difficulty-button[data-level="hard"] { background: #a34333; border-color: #a34333; }
+.button-label { font-size: clamp(26px, 4vw, 36px); }
+.level-detail { color: #fff3dc; }
+.menu-extras { color: #425767; margin-top: 24px; }
+.menu-extras > label { margin: 4px 0; }
+#quick-mode { width: 18px; height: 18px; accent-color: #356759; }
+#practice-mode-label { display: flex; justify-content: center; flex-wrap: wrap; }
+#practice-mode { min-height: 40px; background: #fffdf5; border-color: #84918d; color: var(--campus-ink); max-width: 100%; }
+.mode-description { padding: 10px 12px; background: #e8edde; border-left: 3px solid #356759; border-radius: 4px; line-height: 1.7; font-size: 12px; }
+.menu-links { display: grid; grid-template-columns: repeat(3, 1fr); }
+.menu-links button { color: var(--campus-ink); background: transparent; border: 1px solid #9ca8a6; min-height: 44px; padding: 8px; }
+#resume-button { width: 100%; min-height: 48px; padding: 12px; border: 0; border-radius: 7px; background: #356759; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+#save-status { color: #596863; font-size: 12px; }
+.campus-records { margin-top: 12px; padding-top: 10px; border-top: 1px dashed #bfc3b9; font-size: 12px; }
+.campus-records summary { cursor: pointer; min-height: 32px; }
+.character-header { padding-top: 45px; }
+.character-header .back-button { top: 0; min-height: 40px; }
+.character-card { border-color: #fff8e7; background: #f9f3e4; padding-bottom: 77px; }
+.character-card span { position: static; padding: 6px; background: #20364a; border-radius: 0; }
+.character-note { position: absolute; bottom: 9px; left: 4px; right: 4px; color: #45515b; font-size: 12px; line-height: 1.6; }
+.novel-dialogue { z-index: 5; border-color: #e4d7b8; border-radius: 5px 18px 5px 5px; background: #fff9eef5; color: var(--campus-ink); padding-bottom: 40px; backdrop-filter: none; box-shadow: 4px 6px 0 #142b4666; }
+.novel-dialogue .speaker { display: inline-block; margin: 0 0 10px; color: #fff9e9; padding: 4px 14px; background: #20364a; border-radius: 3px; }
+.novel-dialogue .dialogue-text { color: var(--campus-ink); line-height: 1.85; }
+.dialogue-hint { position: absolute; bottom: 12px; left: 24px; color: #68717a; font-size: 11px; }
+.novel-dialogue .continue-mark { color: #a34333; }
+.story-tools button { min-height: 40px; }
+.story-status { top: 69px; left: 22px; transform: none; backdrop-filter: none; }
+.story-tools { top: 116px; }
+.story-reaction { top: 28%; }
+.forms-shell, .adventure-shell, .practice-panel { border-radius: 9px; }
+@media (max-width: 620px) {
+  .sight-screen { min-height: max(100svh, 720px); }
+  .difficulty-panel { padding: 22px 15px; }
+  .difficulty-list { gap: 7px; }
+  .button-kicker { font-size: 10px; }
+  .journey-steps { font-size: 11px; gap: 4px; }
+  .menu-links { gap: 6px; font-size: 12px; }
+  .chapter-label { top: 68px; left: 12px; max-width: calc(100% - 24px); }
+  .sight-screen .story-status { top: 114px; left: 12px; right: auto; font-size: 10px; padding: 6px 9px; gap: 8px; }
+  .story-tools { top: 153px; left: 12px; right: 12px; justify-content: flex-end; gap: 5px; }
+  .story-tools button { padding: 6px 9px; font-size: 11px; }
+  .story-reaction { top: 215px; padding: 10px 14px; }
+  .reaction-title { font-size: 27px; }
+  .novel-dialogue { padding: 16px 30px 36px 18px; }
+  .dialogue-hint { left: 18px; }
+}
+@media (max-height: 560px) {
+  .sight-screen { min-height: 720px; }
+  .story-reaction { top: 210px; }
+  .character-card img { height: 210px; }
+  .difficulty-panel .subtitle { display: block; }
+}

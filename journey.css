@@ -1,4 +1,29 @@
 /* 剧情、手记和结局层。放在基础样式之后加载，兼顾 GitHub Pages 子目录部署。 */
+/* 纯文字/CSS 演出：不下载额外素材，不遮挡推进操作。 */
+.story-reaction { position: absolute; z-index: 3; top: 23%; left: 50%; width: min(86%, 540px); padding: 18px 24px; transform: translateX(-50%); text-align: center; pointer-events: none; color: #fff3c6; background: #112342ed; border: 2px solid #f4d47e; border-radius: 14px; box-shadow: 0 8px 30px #0006; animation: reaction-pop .3s ease-out both; }
+.reaction-kicker, .reaction-caption { display: block; font-size: clamp(12px, 2vw, 16px); line-height: 1.5; }
+.reaction-kicker { letter-spacing: .18em; opacity: .8; }
+.reaction-title { display: block; margin: 5px 0; font: 900 clamp(27px, 6vw, 52px) KaiTi, serif; }
+.story-reaction[data-kind="divine"] { color: #fff2a5; background: radial-gradient(ellipse, #73501df5, #162342f5); border-width: 3px; text-shadow: 0 2px 8px #0008; }
+.story-reaction[data-kind="crash"] { border-color: #f29999; color: #ffe5e5; background: #342036f5; }
+.story-reaction[data-kind="quest"] { text-align: left; border-color: #9ecdf7; }
+.story-reaction[data-kind="quest"] .reaction-title { font-family: inherit; font-size: clamp(24px, 4vw, 35px); }
+.story-reaction[data-kind="battery"] { color: #fff; background: #252b35f5; border-color: #ffb75e; border-radius: 24px; }
+.story-reaction[data-kind="battery"] .reaction-title::before { content: ''; display: inline-block; width: 36px; height: 18px; margin-right: 14px; border: 2px solid #f3ece0; border-radius: 4px; background: linear-gradient(90deg, #ed7257 12%, transparent 12%); box-shadow: 5px 0 0 -2px #f3ece0; }
+.sight-screen[data-reaction="crash"] .jiahao-character { filter: grayscale(1); }
+.sight-screen::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; }
+.sight-screen[data-reaction="divine"]::after { opacity: .32; background: repeating-conic-gradient(from 0deg at 50% 45%, transparent 0deg 17deg, #ffdf8b88 17deg 18deg, transparent 18deg 30deg); mask-image: radial-gradient(ellipse, transparent 15%, #000 85%); }
+.sight-screen[data-reaction="crash"]::after { opacity: .4; background: linear-gradient(#09203380, transparent 65%); }
+.story-reaction[data-kind="crash"] { animation: reaction-break .42s ease-out both; }
+.story-reaction[data-kind="receipt"] { color: #273243; background: #fff7df; border: 0; border-top: 5px dashed #bda879; border-bottom: 5px dashed #bda879; border-radius: 0; text-shadow: none; }
+.story-reaction[data-kind="receipt"] .reaction-title { font-family: inherit; font-size: clamp(24px, 4.5vw, 36px); }
+.story-reaction[data-kind="buffer"] { border-color: #90c4ec; color: #deefff; }
+.story-reaction[data-kind="buffer"]::after { content: ''; display: block; height: 8px; margin-top: 12px; border: 1px solid #90c4ec; border-radius: 10px; background: linear-gradient(90deg, #90c4ec 1%, transparent 1%); }
+@keyframes reaction-break { 0% { opacity: 0; transform: translateX(-50%) rotate(-4deg) scale(1.06); } 35% { opacity: 1; transform: translateX(calc(-50% + 6px)) rotate(2deg); } 65% { transform: translateX(calc(-50% - 3px)) rotate(-1deg); } 100% { transform: translateX(-50%); } }
+@keyframes reaction-pop { from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(.92); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
+.reduce-motion .story-reaction { animation: none; }
+@media (prefers-reduced-motion: reduce) { .story-reaction, .story-reaction[data-kind="crash"] { animation: none; } }
+@media (max-height: 500px) { .story-reaction { top: 15%; width: min(65%, 480px); padding: 6px 12px; } .reaction-title { font-size: 24px; margin: 2px 0; } .reaction-kicker, .reaction-caption { font-size: 11px; } }
 .journey-steps {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

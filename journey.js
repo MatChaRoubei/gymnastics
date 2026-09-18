@@ -35,6 +35,22 @@ let isTyping = false, isSceneEventPlaying = false, choosing = false, standalone 
 let currentMusic = menuAudio, muted = !!settings.muted, journalTab = 'moves', lastSaveSucceeded = true;
 const pause = milliseconds => new Promise(resolve => window.setTimeout(resolve, milliseconds));
 const reduceMotion = () => document.body.classList.contains('reduce-motion');
+let pendingReaction = null;
+function clearReaction() {
+  pendingReaction = null;
+  $('#story-reaction').hidden = true;
+  screens.sight.removeAttribute('data-reaction');
+}
+function showReaction(effect) {
+  if (!effect || screens.sight.hidden) return;
+  const panel = $('#story-reaction');
+  panel.querySelector('.reaction-kicker').textContent = effect.kicker || '';
+  panel.querySelector('.reaction-title').textContent = effect.title;
+  panel.querySelector('.reaction-caption').textContent = effect.caption || '';
+  panel.dataset.kind = effect.kind || 'stamp';
+  panel.hidden = false;
+  screens.sight.dataset.reaction = panel.dataset.kind;
+}
 
 function freshState() {
   return {
@@ -55,7 +71,8 @@ function makeNode(tag, text, className) {
 }
 
 function validCheckpoint(value) {
-  return value?.version === 2 && Number.isInteger(value.index) && value.index >= 0 && value.index < story.length &&
+  return [2, 3].includes(value?.version) && Number.isInteger(value.index) && value.index >= 0 &&
+    value.index < (value.version === 2 ? window.WushuStory.legacyIndices.length : story.length) &&
     Object.hasOwn(scenes, value.scene) && Object.hasOwn(window.WUSHU.difficulties, value.level) &&
     ['男同学', '女同学'].includes(value.character) && value.state && typeof value.state === 'object';
 }
@@ -69,7 +86,7 @@ function saveCheckpoint() {
   if (standalone || screens.sight.hidden) return;
   lastSaveSucceeded = window.WushuSave.write({
     checkpoint: {
-      version: 2, index: storyIndex, scene: currentScene, character: selectedCharacter,
+      version: 3, index: storyIndex, scene: currentScene, character: selectedCharacter,
       level: selectedLevel, state: gameState, history: history.slice(-120), branchLine,
       jiahao: jiahaoCharacter.classList.contains('show-front'), date: new Date().toISOString(),
     },
@@ -78,6 +95,7 @@ function saveCheckpoint() {
 }
 
 function showScreen(name) {
+  clearReaction();
   Object.entries(screens).forEach(([key, screen]) => {
     screen.hidden = key !== name;
     if (key === name) screen.inert = false;
@@ -159,10 +177,14 @@ function finishCurrentLine() {
   clearInterval(typingTimer);
   dialogueText.textContent = currentLineText;
   isTyping = false; dialogue.classList.remove('is-typing');
+  updateDialogueHint();
+  if (pendingReaction) { showReaction(pendingReaction); pendingReaction = null; }
 }
 
 function renderLine(line = branchLine || story[storyIndex], record = true) {
   if (!line || line.event) return;
+  clearReaction();
+  pendingReaction = typeof line.effect === 'function' ? line.effect(gameState) : line.effect || null;
   currentLineText = String(typeof line.text === 'function' ? line.text(gameState) : line.text || '');
   if (record) history.push((line.speaker || '旁白') + '：' + currentLineText);
   clearInterval(typingTimer);
@@ -170,6 +192,7 @@ function renderLine(line = branchLine || story[storyIndex], record = true) {
   speaker.textContent = line.speaker || '旁白'; dialogueText.textContent = '';
   dialogue.hidden = false; playVoice(line.voice);
   isTyping = true; dialogue.classList.add('is-typing'); dialogue.classList.remove('is-last');
+  updateDialogueHint();
   let index = 0;
   if (textSpeed === 0 || currentLineText.length === 0) finishCurrentLine();
   else typingTimer = setInterval(() => {
@@ -212,6 +235,7 @@ function showChoice(line) {
       branchLine = option.reply ? {
         speaker: option.reply.speaker || '嘉豪',
         text: typeof option.reply.text === 'function' ? option.reply.text(gameState) : option.reply.text,
+        effect: typeof option.reply.effect === 'function' ? option.reply.effect(gameState) : option.reply.effect || null,
       } : null;
       if (branchLine) renderLine();
       else { storyIndex++; runCurrent(); }
@@ -232,6 +256,7 @@ function runCurrent() {
 }
 
 function playEvent(line) {
+  clearReaction();
   if (line.event === 'choice') { showChoice(line); return Promise.resolve(); }
   if (line.event === 'ending') { showEnding(); return Promise.resolve(); }
   return playTimedEvent(line);
@@ -353,7 +378,7 @@ function resumeStory() {
   gameState.practiceResults = plainObject(gameState.practiceResults);
   gameState.adventureResults = plainObject(gameState.adventureResults);
   ['rapport', 'courage', 'focus'].forEach(key => { gameState[key] = clamp(gameState[key], 0, 20, 0); });
-  storyIndex = checkpoint.index;
+  storyIndex = checkpoint.version === 2 ? window.WushuStory.legacyIndices[checkpoint.index] : checkpoint.index;
   history = Array.isArray(checkpoint.history) ? checkpoint.history.filter(value => typeof value === 'string').slice(-120) : [];
   branchLine = checkpoint.branchLine && typeof checkpoint.branchLine.text === 'string' ? checkpoint.branchLine : null;
   showScreen('sight'); setScene(checkpoint.scene); screens.sight.dataset.character = selectedCharacter;
@@ -546,7 +571,26 @@ document.querySelectorAll('[data-level]').forEach(button => button.addEventListe
 }));
 $('#back-button').addEventListener('click', goHome);
 document.querySelectorAll('.character-card').forEach(card => card.addEventListener('click', () => void selectCharacter(card)));
-$('#quick-mode').addEventListener('change', () => { $('#practice-mode-label').hidden = !$('#quick-mode').checked; });
+function updateModeDescription() {
+  const quick = $('#quick-mode').checked;
+  $('#practice-mode-label').hidden = !quick;
+  $('.difficulty-caption').textContent = quick ? '01 / 选个难度，直接开练' : '01 / 选个难度，去学校报到';
+  const descriptions = {
+    forms: '八式百炼：八种动作、八种操作。瞄准、蓄力、反应与平衡都要试试。',
+    standard: '八式巡礼：看准目标拍出招，可选守势、刚势或游势。',
+    relay: '嘉豪接拍：先看他示范，再接自己的回合。不要抢戏。',
+    paper: '风中名单：按页码收回名单，别把午饭菜单捡进去。',
+    spar: '拆招预演：观察脚步和重心，选择守、让或截。无需跟音乐。',
+  };
+  $('#mode-description').textContent = quick ? descriptions[$('#practice-mode').value] : '第一次来？从故事开始，边认识嘉豪边学动作。';
+}
+function updateDialogueHint() {
+  $('#dialogue-hint').textContent = isTyping ? '点击可显示整句' : !voiceAudio.paused && !voiceAudio.ended && !muted ? '配音播放中 · 播完后继续' : '点击 / 空格 / Enter 继续';
+}
+['playing', 'ended', 'pause', 'error'].forEach(name => voiceAudio.addEventListener(name, updateDialogueHint));
+$('#quick-mode').addEventListener('change', updateModeDescription);
+$('#practice-mode').addEventListener('change', updateModeDescription);
+updateModeDescription();
 $('#resume-button').addEventListener('click', resumeStory);
 $('#tutorial-button').addEventListener('click', () => { selectedLevel = 'easy'; startQuickPractice('tutorial'); });
 $('#journal-button').addEventListener('click', openJournal);

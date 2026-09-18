@@ -11,34 +11,38 @@
     <link rel="stylesheet" href="practice-extra.css" />
     <link rel="stylesheet" href="adventure.css" />
     <link rel="stylesheet" href="forms.css" />
+    <link rel="stylesheet" href="campus.css" />
   </head>
   <body>
     <main class="game" id="game">
       <section class="screen difficulty-screen" id="difficulty-screen" aria-labelledby="game-title">
         <div class="difficulty-panel" aria-label="难度选择">
-        <p class="eyebrow">同频少年 · 校园第一日</p>
+        <p class="eyebrow">高一三班 · 新生入学须知</p>
         <h1 id="game-title">武术操挑战</h1>
-        <p class="subtitle">江湖很远，操场很近。你的第一招，从这一拍开始。</p>
+        <p class="subtitle">开学第一天，认识了一位神。<br />目前正在被门卫要求擦留言板。</p>
+        <p class="campus-stamp">校园喜剧 / 动作小游戏</p>
         <ol class="journey-steps" aria-label="故事篇章">
           <li><span>01</span> 校门奇遇</li><li><span>02</span> 八式百炼</li><li><span>03</span> 风中名单</li><li><span>04</span> 拆招接拍</li>
         </ol>
-        <p class="difficulty-caption">选择难度，开始新故事</p>
+        <button type="button" id="resume-button" hidden>继续故事</button>
+        <p class="difficulty-caption">01 / 选个难度，去学校报到</p>
+        <p class="difficulty-note">难度只影响挑战；剧情都能看，失误也能继续。</p>
 
         <div class="difficulty-list">
           <button class="difficulty-button easy" id="easy-button" data-level="easy" type="button">
-            <span class="button-kicker">新手入门</span>
+            <span class="button-kicker">先活过第一天</span>
             <span class="button-label">简单</span>
             <span class="level-detail">慢拍 · 宽松判定</span>
           </button>
 
           <button class="difficulty-button easy" data-level="normal" type="button">
-            <span class="button-kicker">进阶训练</span>
+            <span class="button-kicker">我应该会了</span>
             <span class="button-label">普通</span>
             <span class="level-detail">稳拍 · 连式进阶</span>
           </button>
 
           <button class="difficulty-button easy" data-level="hard" type="button">
-            <span class="button-kicker">高手试炼</span>
+            <span class="button-kicker">封印解除</span>
             <span class="button-label">困难</span>
             <span class="level-detail">快拍 · 精准试炼</span>
           </button>
@@ -46,15 +50,17 @@
         <div class="menu-extras">
           <label><input id="quick-mode" type="checkbox" /> 直接挑战（跳过开场）</label>
           <label id="practice-mode-label" hidden>直接挑战 <select id="practice-mode"><option value="forms">八式百炼 · 综合</option><option value="standard">八式巡礼 · 节奏</option><option value="relay">嘉豪接拍 · 节奏</option><option value="paper">风中名单 · 观察</option><option value="spar">拆招预演 · 策略</option></select></label>
+          <p id="mode-description" class="mode-description">第一次来？从故事开始，边认识嘉豪边学动作。</p>
           <div class="menu-links">
-            <button type="button" id="resume-button" hidden>继续故事</button>
-            <button type="button" id="tutorial-button">初学 · 找到节拍</button>
+            <button type="button" id="tutorial-button">节奏入门教学</button>
             <button type="button" id="journal-button">习武手记</button>
             <button type="button" id="help-button">玩法与设置</button>
           </div>
           <p id="save-status" role="status">剧情自动存档 · 挑战随时可重来</p>
-          <p id="personal-best">最高成绩保存在当前浏览器</p>
-          <p id="achievement-summary">成就：0 / 10</p>
+          <details class="campus-records"><summary>翻开我的成绩单</summary>
+            <p id="personal-best">最高成绩保存在当前浏览器</p>
+            <p id="achievement-summary">成就：0 / 10</p>
+          </details>
         </div>
         </div>
       </section>
@@ -63,22 +69,25 @@
         <div class="character-header">
           <button class="back-button" id="back-button" type="button">← 返回</button>
           <p class="eyebrow" id="selected-level">简单模式</p>
-          <h2 id="character-title">选择你的角色</h2>
+          <h2 id="character-title">02 / 谁来接这个戏？</h2>
           <p id="character-subtitle">同一个操场，两种开场白。招式与判定相同。</p>
         </div>
         <div class="character-list" role="list">
           <button class="character-card male" type="button" data-character="男同学" role="listitem">
             <img src="resources/character/male_back_start.png" alt="男同学角色" loading="lazy" decoding="async" />
             <span>男同学</span>
+            <small class="character-note">「你豪王来了！」<br />开场先把气势拉满</small>
           </button>
           <button class="character-card female" type="button" data-character="女同学" role="listitem">
             <img src="resources/character/female_back_start.png" alt="女同学角色" loading="lazy" decoding="async" />
             <span>女同学</span>
+            <small class="character-note">「有点期待呢。」<br />暂时还不知道会遇见谁</small>
           </button>
         </div>
       </section>
 
       <section class="screen sight-screen" id="sight-screen" aria-labelledby="sight-title" hidden>
+        <div id="story-reaction" class="story-reaction" aria-hidden="true" hidden><span class="reaction-kicker"></span><strong class="reaction-title"></strong><span class="reaction-caption"></span></div>
         <div class="story-tools">
           <button id="story-log" type="button">回看</button>
           <button id="story-settings" type="button">设置</button>
@@ -94,6 +103,7 @@
         <div class="novel-dialogue" id="novel-dialogue" role="button" tabindex="0" aria-label="点击、按空格或回车继续对话">
           <p class="speaker" id="speaker" aria-hidden="true"></p>
           <p class="dialogue-text" id="sight-title" aria-live="polite"></p>
+          <span id="dialogue-hint" class="dialogue-hint">点击 / 空格 / Enter 继续</span>
           <span class="continue-mark" aria-hidden="true">▼</span>
         </div>
         <div class="story-choice" id="story-choice" aria-labelledby="choice-prompt" hidden>
