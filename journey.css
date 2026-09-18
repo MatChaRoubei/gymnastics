@@ -92,7 +92,7 @@
   background:
     radial-gradient(circle at 50% 25%, #f9dc8066, transparent 32%),
     linear-gradient(180deg, #081c36aa, #061527e8),
-    url("resources/scene/sight/1.jpg") center / cover no-repeat;
+    url("resources/scene/sight/1.webp") center / cover no-repeat;
 }
 .ending-card {
   position: relative;

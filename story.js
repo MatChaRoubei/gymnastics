@@ -2,12 +2,12 @@
   // 剧情与编排为原创。voice / music 为 null 时不请求新素材，沿用已有配乐。
   // when 控制台词是否出现；选择只影响剧情关系，不改变练习的判定窗口。
   const scenes = {
-    gate: { title: '第一章 · 名字先记住', image: 'resources/scene/sight/1.jpg', music: 'school' },
-    yard: { title: '第二章 · 后排也有节拍', image: 'resources/scene/sight/yard_assembly.png', music: 'school' },
-    exercise: { title: '第三章 · 八式初试', image: 'resources/scene/sight/wushu_practice_homage.png', music: 'school' },
-    lunch: { title: '第四章 · 被风吹乱的名单', image: 'resources/scene/sight/courtyard_wind_original.png', music: 'comedy' },
-    relay: { title: '第五章 · 你的下一拍', image: 'resources/scene/sight/wushu_practice_homage.png', music: 'school' },
-    afterSchool: { title: '终章 · 明天见', image: 'resources/scene/sight/1.jpg', music: 'school' },
+    gate: { title: '第一章 · 名字先记住', image: 'resources/scene/sight/1.webp', music: 'school' },
+    yard: { title: '第二章 · 后排也有节拍', image: 'resources/scene/sight/yard_assembly.webp', music: 'school' },
+    exercise: { title: '第三章 · 八式初试', image: 'resources/scene/sight/wushu_practice_homage.webp', music: 'school' },
+    lunch: { title: '第四章 · 被风吹乱的名单', image: 'resources/scene/sight/courtyard_wind_original.webp', music: 'comedy' },
+    relay: { title: '第五章 · 你的下一拍', image: 'resources/scene/sight/wushu_practice_homage.webp', music: 'school' },
+    afterSchool: { title: '终章 · 明天见', image: 'resources/scene/sight/1.webp', music: 'school' },
   };
   const resultFor = (state, mode) => state.practiceResults?.[mode] || {};
   const challengeFor = (state, mode) => state.adventureResults?.[mode] || {};

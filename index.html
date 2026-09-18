@@ -68,11 +68,11 @@
         </div>
         <div class="character-list" role="list">
           <button class="character-card male" type="button" data-character="男同学" role="listitem">
-            <img src="resources/character/male_back_start.png" alt="男同学角色" />
+            <img src="resources/character/male_back_start.png" alt="男同学角色" loading="lazy" decoding="async" />
             <span>男同学</span>
           </button>
           <button class="character-card female" type="button" data-character="女同学" role="listitem">
-            <img src="resources/character/female_back_start.png" alt="女同学角色" />
+            <img src="resources/character/female_back_start.png" alt="女同学角色" loading="lazy" decoding="async" />
             <span>女同学</span>
           </button>
         </div>
@@ -88,8 +88,8 @@
         <span class="chapter-label" id="chapter-label">第一幕 · 初来乍到</span>
         <div class="story-status"><span id="bond-status">同窗 · 初识</span><span id="chapter-progress"></span></div>
         <div class="jiahao-character" id="jiahao-character" aria-hidden="true">
-          <img class="jiahao-image jiahao-back" src="resources/character/jiahao_back_start.png" alt="" />
-          <img class="jiahao-image jiahao-front" src="resources/character/jiahao_front_start.png" alt="" />
+          <img class="jiahao-image jiahao-back" src="resources/character/jiahao_back_start.png" alt="" loading="lazy" decoding="async" />
+          <img class="jiahao-image jiahao-front" src="resources/character/jiahao_front_start.png" alt="" loading="lazy" decoding="async" />
         </div>
         <div class="novel-dialogue" id="novel-dialogue" role="button" tabindex="0" aria-label="点击、按空格或回车继续对话">
           <p class="speaker" id="speaker" aria-hidden="true"></p>
@@ -166,7 +166,7 @@
               <div class="spar-arena">
                 <div class="player-marker"><span>我</span><small id="player-composure">定力 ◆◆◆</small></div>
                 <div id="spar-cue" class="spar-cue" aria-live="polite"><span id="cue-kind">候</span><strong id="cue-title">观察嘉豪的起势</strong><p id="cue-text">动作出现后，选择合适的回应。</p></div>
-                <img src="resources/character/jiahao_front_start.png" alt="嘉豪正在示范" />
+                <img src="resources/character/jiahao_front_start.png" alt="嘉豪正在示范" loading="lazy" decoding="async" />
               </div>
               <p class="counter-guide"><span>直来宜让</span><span>虚引宜守</span><span>绕侧宜截</span></p>
               <div id="tactic-options" class="tactic-options" aria-label="选择回应"></div>
@@ -221,14 +221,14 @@
       </section>
       <div class="transition" id="transition" aria-hidden="true"></div>
       <button class="music-toggle" id="music-toggle" type="button" aria-label="切换游戏声音">开启声音</button>
-      <audio id="menu-audio" src="resources/sound/music/menu.mp3" loop preload="auto"></audio>
-      <audio id="peace-audio" src="resources/sound/music/peace.mp3" loop preload="auto"></audio>
-      <audio id="school-audio" loop preload="auto"></audio>
-      <audio id="action-audio" loop preload="auto"></audio>
-      <audio id="comedy-audio" loop preload="auto"></audio>
-      <audio id="suspense-audio" loop preload="auto"></audio>
-      <audio id="ending-audio" loop preload="auto"></audio>
-      <audio id="voice-audio" preload="auto"></audio>
+      <audio id="menu-audio" loop preload="none"></audio>
+      <audio id="peace-audio" loop preload="none"></audio>
+      <audio id="school-audio" loop preload="none"></audio>
+      <audio id="action-audio" loop preload="none"></audio>
+      <audio id="comedy-audio" loop preload="none"></audio>
+      <audio id="suspense-audio" loop preload="none"></audio>
+      <audio id="ending-audio" loop preload="none"></audio>
+      <audio id="voice-audio" preload="none"></audio>
       <dialog id="info-dialog">
         <h2 id="info-title">玩法与设置</h2>
         <div id="info-body"></div>

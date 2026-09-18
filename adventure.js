@@ -300,7 +300,7 @@
       const info = modeInfo[modeKey]; setState('ready'); panel.hidden = false; panel.dataset.mode = modeKey;
       el('adventure-kicker').textContent = info.kicker + ' · ' + window.WUSHU.difficulties[levelKey].name;
       el('adventure-title').textContent = options.title || info.title; el('adventure-help').textContent = info.help;
-      stage.style.setProperty('--adventure-bg', modeKey === 'paper' ? 'url("resources/scene/sight/courtyard_wind_original.png")' : 'url("resources/scene/sight/stance_court_original.png")');
+      stage.style.setProperty('--adventure-bg', modeKey === 'paper' ? 'url("resources/scene/sight/courtyard_wind_original.webp")' : 'url("resources/scene/sight/stance_court_original.webp")');
       paperField.hidden = modeKey !== 'paper'; sparField.hidden = modeKey !== 'spar'; resultPanel.hidden = true;
       paperField.replaceChildren(); el('tactic-options').replaceChildren();
       score = correct = errors = streak = 0; round = 0; total = modeKey === 'paper' ? config.paperTotal : config.sparRounds;

@@ -10,6 +10,8 @@ const musicTracks = {
   comedy: $('#comedy-audio'), suspense: $('#suspense-audio'), ending: $('#ending-audio'),
 };
 const musicSources = {
+  menu: 'resources/sound/music/menu.mp3',
+  peace: 'resources/sound/music/peace.mp3',
   school: 'resources/sound/music/download-candidates/schoolday.ogg',
   action: 'resources/sound/music/download-candidates/cinematic-percussion.wav',
   comedy: 'resources/sound/music/download-candidates/happy-clappy.wav',
@@ -122,6 +124,9 @@ function musicLevel() {
 
 function useMusic(audio) {
   if (!audio) audio = peaceAudio;
+  const trackName = Object.keys(musicTracks).find(name => musicTracks[name] === audio);
+  const source = musicSources[trackName] || (audio === peaceAudio ? musicSources.peace : null);
+  if (source && audio.getAttribute('src') !== source) audio.src = source;
   if (currentMusic !== audio) {
     currentMusic.pause(); currentMusic.currentTime = 0; currentMusic = audio;
   }
@@ -178,7 +183,7 @@ function setScene(name) {
   currentScene = Object.hasOwn(scenes, name) ? name : 'gate';
   const scene = scenes[currentScene];
   chapter.textContent = scene.title;
-  screens.sight.style.setProperty('--scene-image', 'url("' + (scene.image || 'resources/scene/physics/background_school.jpg') + '")');
+  screens.sight.style.setProperty('--scene-image', 'url("' + (scene.image || 'resources/scene/physics/background_school.webp') + '")');
   screens.sight.classList.toggle('is-still', currentScene !== 'gate');
   useSceneMusic();
 }

@@ -33,7 +33,7 @@
   border-radius: 19px;
   background:
     linear-gradient(180deg, #03162d7a, #03162dbd),
-    url("resources/scene/sight/wushu_practice_homage.png") center / cover no-repeat;
+    url("resources/scene/sight/wushu_practice_homage.webp") center / cover no-repeat;
   box-shadow: inset 0 0 55px #00142b66;
 }
 .forms-intro { position: absolute; z-index: 3; top: 16px; left: 18px; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 36px); padding: 11px 15px; border: 1px solid #ffffff31; border-radius: 15px; background: #05192ed9; backdrop-filter: blur(6px); }
