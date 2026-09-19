@@ -4,7 +4,7 @@
   "private": true,
   "description": "武术操挑战 · 同频少年：纯静态 HTML/CSS/JS 小游戏，无构建步骤；这里只放本地校验用的开发依赖。",
   "scripts": {
-    "check": "node --check config.js && node --check story.js && node --check journey.js && node --check practice.js && node --check adventure.js && node --check action-games.js && node --check forms.js",
+    "check": "node --check config.js && node --check story.js && node --check journey.js && node --check practice.js && node --check adventure.js && node --check action-games.js && node --check forms.js && node --check service-worker.js",
     "test": "npm run check && npm run test:browser && npm run test:cast",
     "test:all": "npm run test && npm run test:forms && npm run test:action && npm run test:adventure",
     "test:action": "node tests/action-games.cjs",

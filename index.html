@@ -9,6 +9,7 @@
     <link rel="icon" type="image/png" sizes="64x64" href="resources/icon/favicon-64.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="resources/icon/apple-touch-icon.png" />
     <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>武术操挑战 · 同频少年</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="journey.css" />
@@ -281,4 +282,9 @@
     <script src="story.js"></script>
     <script src="journey.js"></script>
   </body>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+    }
+  </script>
 </html>
