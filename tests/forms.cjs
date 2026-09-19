@@ -1,5 +1,13 @@
 // Optional: PLAYWRIGHT_MODULE, BROWSER_EXE, WUSHU_BASE_URL.
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+function loadPlaywright() {
+  // 优先用 PLAYWRIGHT_MODULE 指定的模块；否则依次尝试 playwright / playwright-core。
+  const attempts = [process.env.PLAYWRIGHT_MODULE, 'playwright', 'playwright-core'].filter(Boolean);
+  for (const name of attempts) {
+    try { return require(name); } catch { /* 试下一个 */ }
+  }
+  throw new Error('未找到 Playwright：先 npm install，或用 PLAYWRIGHT_MODULE 指向已安装的模块。');
+}
+const { chromium } = loadPlaywright();
 const { pathToFileURL } = require('node:url');
 const path = require('node:path');
 const os = require('node:os');
@@ -24,7 +32,7 @@ async function openPage(browser, viewport = { width: 1280, height: 900 }) {
 async function openForms(page) {
   await page.locator('#quick-mode').setChecked(true);
   await page.locator('#practice-mode').selectOption('forms');
-  await click(page, '[data-level="easy"]');
+  await click(page, 'button[data-level="easy"]');
   await click(page, '.female');
   await page.clock.runFor(1500);
   assert(await page.locator('#forms').isVisible());
@@ -40,7 +48,7 @@ async function finishEveryFormByTimeout(page) {
       await click(page, '.forms-pads button:nth-child(1)');
       await click(page, '.forms-pads button:nth-child(2)');
     }
-    await page.clock.fastForward(40000);
+    await page.clock.runFor(40000);
     assert(await page.locator('#forms-round-result').isVisible(), `${expected[index]} 超时后也必须结算，不可卡关`);
     await click(page, '#forms-next');
     await page.clock.runFor(20);

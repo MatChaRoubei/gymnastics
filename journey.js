@@ -12,11 +12,11 @@ const musicTracks = {
 const musicSources = {
   menu: 'resources/sound/music/menu.mp3',
   peace: 'resources/sound/music/peace.mp3',
-  school: 'resources/sound/music/download-candidates/schoolday.ogg',
-  action: 'resources/sound/music/download-candidates/cinematic-percussion.wav',
-  comedy: 'resources/sound/music/download-candidates/happy-clappy.wav',
-  suspense: 'resources/sound/music/download-candidates/suspense.ogg',
-  ending: 'resources/sound/music/download-candidates/forget-me-not-loop.ogg',
+  school: 'resources/sound/music/download-candidates/schoolday.mp3',
+  action: 'resources/sound/music/download-candidates/cinematic-percussion.mp3',
+  comedy: 'resources/sound/music/download-candidates/happy-clappy.mp3',
+  suspense: 'resources/sound/music/download-candidates/suspense.mp3',
+  ending: 'resources/sound/music/download-candidates/forget-me-not-loop.mp3',
 };
 const musicToggle = $('#music-toggle'), dialogue = $('#novel-dialogue');
 const speaker = $('#speaker'), dialogueText = $('#sight-title');
@@ -33,6 +33,8 @@ let storyIndex = 0, currentScene = 'gate', history = [], currentLineText = '', b
 let gameState = freshState(), typingTimer, epoch = 0;
 let isTyping = false, isSceneEventPlaying = false, choosing = false, standalone = false;
 let currentMusic = menuAudio, muted = !!settings.muted, journalTab = 'moves', lastSaveSucceeded = true;
+const voiceSkipDelay = 900;
+let voiceStartedAt = -Infinity, voiceSkipTimer;
 const pause = milliseconds => new Promise(resolve => window.setTimeout(resolve, milliseconds));
 const reduceMotion = () => document.body.classList.contains('reduce-motion');
 let pendingReaction = null;
@@ -71,8 +73,7 @@ function makeNode(tag, text, className) {
 }
 
 function validCheckpoint(value) {
-  return [2, 3].includes(value?.version) && Number.isInteger(value.index) && value.index >= 0 &&
-    value.index < (value.version === 2 ? window.WushuStory.legacyIndices.length : story.length) &&
+  return Number.isInteger(window.WushuStory.checkpointIndex(value?.version, value?.index)) &&
     Object.hasOwn(scenes, value.scene) && Object.hasOwn(window.WUSHU.difficulties, value.level) &&
     ['男同学', '女同学'].includes(value.character) && value.state && typeof value.state === 'object';
 }
@@ -86,7 +87,7 @@ function saveCheckpoint() {
   if (standalone || screens.sight.hidden) return;
   lastSaveSucceeded = window.WushuSave.write({
     checkpoint: {
-      version: 3, index: storyIndex, scene: currentScene, character: selectedCharacter,
+      version: 4, index: storyIndex, scene: currentScene, character: selectedCharacter,
       level: selectedLevel, state: gameState, history: history.slice(-120), branchLine,
       jiahao: jiahaoCharacter.classList.contains('show-front'), date: new Date().toISOString(),
     },
@@ -160,6 +161,7 @@ function useSceneMusic() {
 }
 
 function stopVoice() {
+  clearTimeout(voiceSkipTimer); voiceStartedAt = -Infinity;
   voiceAudio.pause();
   if (voiceAudio.hasAttribute('src')) { voiceAudio.removeAttribute('src'); voiceAudio.load(); }
   currentMusic.volume = musicLevel();
@@ -170,7 +172,13 @@ function playVoice(source) {
   if (!source || muted) return;
   currentMusic.volume = musicVolume * .38;
   voiceAudio.src = source; voiceAudio.muted = muted;
-  voiceAudio.play().catch(() => { currentMusic.volume = musicLevel(); });
+  voiceStartedAt = performance.now();
+  voiceSkipTimer = window.setTimeout(updateDialogueHint, voiceSkipDelay);
+  voiceAudio.play().catch(() => { voiceStartedAt = -Infinity; currentMusic.volume = musicLevel(); updateDialogueHint(); });
+}
+
+function voiceCanSkip() {
+  return !voiceAudio.paused && !voiceAudio.ended && !muted && performance.now() - voiceStartedAt >= voiceSkipDelay;
 }
 
 function finishCurrentLine() {
@@ -181,6 +189,62 @@ function finishCurrentLine() {
   if (pendingReaction) { showReaction(pendingReaction); pendingReaction = null; }
 }
 
+const castProfiles = {
+  '陈佳佳': { id: 'jiajia', image: 'chen_jiajia_start_v1.webp', role: '暂代体委 · 异变处理处' },
+  '张鹏': { id: 'zhangpeng', image: 'zhang_peng_start_v1.webp', role: '乐队筹备中 · 鼓手待招' },
+  '王磊': { id: 'wanglei', image: 'wang_lei_start_v1.webp', role: '同班同学 · 随时接梗' },
+};
+let activeCast = null;
+const castPortrait = $('#cast-portrait');
+
+function clearCastPortrait() {
+  activeCast = null;
+  castPortrait.hidden = true;
+  castPortrait.onload = castPortrait.onerror = null;
+  screens.sight.classList.remove('has-cast-portrait', 'cast-listening');
+}
+
+function fitCastPortrait() {
+  if (!activeCast || dialogue.hidden || screens.sight.hidden) return;
+  const toolbar = $('.story-tools').getBoundingClientRect();
+  const room = dialogue.getBoundingClientRect().top - toolbar.bottom - 18;
+  // Reserve space above the dialogue for artwork, never covering story controls.
+  castPortrait.style.setProperty('--cast-room', Math.max(0, room) + 'px');
+  castPortrait.style.visibility = room < 100 ? 'hidden' : '';
+}
+
+function updateCastPortrait(name) {
+  const profile = castProfiles[name];
+  $('#cast-role').textContent = profile?.role || '';
+  dialogue.dataset.cast = profile?.id || (name === '嘉豪' ? 'jiahao' : 'other');
+  if (!profile) {
+    if (activeCast && (!name || name.startsWith('我'))) {
+      screens.sight.classList.add('cast-listening');
+      fitCastPortrait();
+    } else clearCastPortrait();
+    return;
+  }
+  screens.sight.classList.remove('cast-listening');
+  if (activeCast === profile.id) return;
+  activeCast = profile.id;
+  castPortrait.hidden = true;
+  screens.sight.classList.add('has-cast-portrait');
+  castPortrait.dataset.cast = profile.id;
+  const expected = profile.id;
+  castPortrait.onload = () => {
+    if (activeCast !== expected) return;
+    castPortrait.hidden = false;
+    fitCastPortrait();
+  };
+  castPortrait.onerror = () => { if (activeCast === expected) clearCastPortrait(); };
+  castPortrait.src = 'resources/character/' + profile.image;
+}
+
+const castLayoutObserver = new ResizeObserver(fitCastPortrait);
+castLayoutObserver.observe(dialogue);
+castLayoutObserver.observe(screens.sight);
+window.addEventListener('resize', fitCastPortrait);
+
 function renderLine(line = branchLine || story[storyIndex], record = true) {
   if (!line || line.event) return;
   clearReaction();
@@ -190,7 +254,9 @@ function renderLine(line = branchLine || story[storyIndex], record = true) {
   clearInterval(typingTimer);
   choicePanel.hidden = true; choosing = false;
   speaker.textContent = line.speaker || '旁白'; dialogueText.textContent = '';
+  speaker.dataset.cast = castProfiles[line.speaker]?.id || (line.speaker === '嘉豪' ? 'jiahao' : 'other');
   dialogue.hidden = false; playVoice(line.voice);
+  updateCastPortrait(line.speaker);
   isTyping = true; dialogue.classList.add('is-typing'); dialogue.classList.remove('is-last');
   updateDialogueHint();
   let index = 0;
@@ -203,6 +269,7 @@ function renderLine(line = branchLine || story[storyIndex], record = true) {
 }
 
 function setScene(name) {
+  clearCastPortrait();
   currentScene = Object.hasOwn(scenes, name) ? name : 'gate';
   const scene = scenes[currentScene];
   chapter.textContent = scene.title;
@@ -338,7 +405,10 @@ async function playTimedEvent(line) {
 function advanceStory() {
   if (screens.sight.hidden || !$('#practice').hidden || !$('#adventure').hidden || !$('#forms').hidden || isSceneEventPlaying || choosing || infoDialog.open || journalDialog.open) return;
   if (isTyping) { finishCurrentLine(); return; }
-  if (!voiceAudio.paused && !voiceAudio.ended && !muted) return;
+  if (!voiceAudio.paused && !voiceAudio.ended && !muted) {
+    if (!voiceCanSkip()) return;
+    stopVoice();
+  }
   branchLine = null; storyIndex++; runCurrent();
 }
 
@@ -378,7 +448,7 @@ function resumeStory() {
   gameState.practiceResults = plainObject(gameState.practiceResults);
   gameState.adventureResults = plainObject(gameState.adventureResults);
   ['rapport', 'courage', 'focus'].forEach(key => { gameState[key] = clamp(gameState[key], 0, 20, 0); });
-  storyIndex = checkpoint.version === 2 ? window.WushuStory.legacyIndices[checkpoint.index] : checkpoint.index;
+  storyIndex = window.WushuStory.checkpointIndex(checkpoint.version, checkpoint.index);
   history = Array.isArray(checkpoint.history) ? checkpoint.history.filter(value => typeof value === 'string').slice(-120) : [];
   branchLine = checkpoint.branchLine && typeof checkpoint.branchLine.text === 'string' ? checkpoint.branchLine : null;
   showScreen('sight'); setScene(checkpoint.scene); screens.sight.dataset.character = selectedCharacter;
@@ -585,7 +655,7 @@ function updateModeDescription() {
   $('#mode-description').textContent = quick ? descriptions[$('#practice-mode').value] : '第一次来？从故事开始，边认识嘉豪边学动作。';
 }
 function updateDialogueHint() {
-  $('#dialogue-hint').textContent = isTyping ? '点击可显示整句' : !voiceAudio.paused && !voiceAudio.ended && !muted ? '配音播放中 · 播完后继续' : '点击 / 空格 / Enter 继续';
+  $('#dialogue-hint').textContent = isTyping ? '点击可显示整句' : voiceCanSkip() ? '点击可跳过配音并继续' : !voiceAudio.paused && !voiceAudio.ended && !muted ? '配音播放中 · 稍后可跳过' : '点击 / 空格 / Enter 继续';
 }
 ['playing', 'ended', 'pause', 'error'].forEach(name => voiceAudio.addEventListener(name, updateDialogueHint));
 $('#quick-mode').addEventListener('change', updateModeDescription);
@@ -627,6 +697,106 @@ musicToggle.addEventListener('click', () => {
   if ($('#practice').hidden && $('#adventure').hidden && $('#forms').hidden && currentMusic.paused && !muted) tryMusic();
 }));
 ['ended', 'error'].forEach(eventName => voiceAudio.addEventListener(eventName, () => { currentMusic.volume = musicLevel(); }));
+
+// —— 判定校准：跟着 8 次提示音点击，取中位数写入 settings.judgeOffset ——
+// 正值表示玩家习惯偏晚出手（蓝牙耳机、音箱延迟等），练习时会据此提前判定。
+const judgeOffsetInput = $('#judge-offset'), judgeOffsetValue = $('#judge-offset-value');
+const calibrationButton = $('#calibration-button'), calibrationTap = $('#calibration-tap');
+const calibrationStatus = $('#calibration-status'), calibrationPulse = $('#calibration-pulse');
+const CALIBRATION_BEATS = 8, CALIBRATION_BEAT_MS = 600;
+const CALIBRATION_WINDOW = 240, CALIBRATION_MIN_TAPS = 4;
+let calibrationAudio = null, calibrationRun = null;
+
+const clampJudgeOffset = value => Number.isFinite(Number(value)) ? Math.round(Math.min(200, Math.max(-200, Number(value)))) : 0;
+const savedJudgeOffset = () => clampJudgeOffset(window.WushuSave.read().settings?.judgeOffset);
+const signedOffset = value => (value > 0 ? '+' : '') + value + ' 毫秒';
+function writeJudgeOffset(value) {
+  const save = window.WushuSave.read();
+  window.WushuSave.write({ settings: { ...plainObject(save.settings), judgeOffset: value } });
+}
+function paintJudgeOffset(message) {
+  const value = savedJudgeOffset();
+  judgeOffsetInput.value = String(value);
+  judgeOffsetValue.textContent = signedOffset(value);
+  if (message) { calibrationStatus.textContent = message; return; }
+  if (calibrationRun) return;
+  calibrationStatus.textContent = value
+    ? '当前判定补偿 ' + signedOffset(value) + '：你的输入整体偏' + (value > 0 ? '晚' : '早') + '。'
+    : '当前没有启用判定补偿。';
+}
+function calibrationTone(accent) {
+  if (!calibrationAudio || calibrationAudio.state !== 'running' || muted) return;
+  const oscillator = calibrationAudio.createOscillator(), gain = calibrationAudio.createGain();
+  oscillator.frequency.value = accent ? 880 : 540;
+  gain.gain.setValueAtTime(.06, calibrationAudio.currentTime);
+  gain.gain.exponentialRampToValueAtTime(.001, calibrationAudio.currentTime + .07);
+  oscillator.connect(gain); gain.connect(calibrationAudio.destination);
+  oscillator.start(); oscillator.stop(calibrationAudio.currentTime + .08);
+  oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+}
+function startCalibration() {
+  try {
+    calibrationAudio ||= new (window.AudioContext || window.webkitAudioContext)();
+    calibrationAudio.resume().catch(() => {});
+  } catch { /* 没有音频时靠圆点闪烁也能校准 */ }
+  finishCalibration(true);
+  const start = performance.now() + 700;
+  calibrationRun = { start, taps: [], beat: -1, frame: 0 };
+  calibrationButton.hidden = true; calibrationTap.hidden = false;
+  calibrationStatus.textContent = '准备：听到提示音后，跟着每一下点击「跟拍点击」';
+  calibrationTap.focus({ preventScroll: true });
+  const tick = now => {
+    if (!calibrationRun) return;
+    const beat = Math.floor((now - calibrationRun.start) / CALIBRATION_BEAT_MS);
+    if (beat >= 0 && beat < CALIBRATION_BEATS && beat !== calibrationRun.beat) {
+      calibrationRun.beat = beat; calibrationTone(beat % 2 === 0);
+      calibrationPulse.classList.remove('tick'); void calibrationPulse.offsetWidth; calibrationPulse.classList.add('tick');
+      if (!calibrationRun.taps.length) calibrationStatus.textContent = '第 ' + (beat + 1) + ' / ' + CALIBRATION_BEATS + ' 拍 · 跟上并点击';
+    }
+    if (now >= calibrationRun.start + CALIBRATION_BEATS * CALIBRATION_BEAT_MS + CALIBRATION_WINDOW) { finishCalibration(); return; }
+    calibrationRun.frame = requestAnimationFrame(tick);
+  };
+  calibrationRun.frame = requestAnimationFrame(tick);
+}
+function tapCalibration() {
+  if (!calibrationRun) return;
+  const elapsed = performance.now() - calibrationRun.start;
+  if (elapsed < 0) return;
+  const offset = Math.round(elapsed - Math.round(elapsed / CALIBRATION_BEAT_MS) * CALIBRATION_BEAT_MS);
+  if (Math.abs(offset) > CALIBRATION_WINDOW) { calibrationStatus.textContent = '这一下离线太远，已忽略'; return; }
+  calibrationRun.taps.push(offset); calibrationTone(false);
+  calibrationStatus.textContent = '已记录 ' + calibrationRun.taps.length + ' / ' + CALIBRATION_BEATS + ' 下（本次 ' + signedOffset(offset) + '）';
+  if (calibrationRun.taps.length >= CALIBRATION_BEATS) finishCalibration();
+}
+function finishCalibration(silent = false) {
+  const run = calibrationRun;
+  if (!run) return;
+  calibrationRun = null;
+  cancelAnimationFrame(run.frame);
+  calibrationButton.hidden = false; calibrationTap.hidden = true;
+  if (silent) return;
+  if (run.taps.length < CALIBRATION_MIN_TAPS) {
+    paintJudgeOffset('只记录到 ' + run.taps.length + ' 下，至少需要 ' + CALIBRATION_MIN_TAPS + ' 下，再试一次。');
+    return;
+  }
+  const sorted = [...run.taps].sort((a, b) => a - b), middle = (sorted.length - 1) / 2;
+  const value = clampJudgeOffset((sorted[Math.floor(middle)] + sorted[Math.ceil(middle)]) / 2);
+  writeJudgeOffset(value);
+  paintJudgeOffset('已写入判定补偿 ' + signedOffset(value) + '（' + run.taps.length + ' 个样本）。' +
+    (value > 0 ? '你的点击整体偏晚。' : value < 0 ? '你的点击整体偏早。' : '你的节奏已经很准。'));
+}
+judgeOffsetInput.addEventListener('input', event => {
+  const value = clampJudgeOffset(event.target.value);
+  writeJudgeOffset(value);
+  judgeOffsetValue.textContent = signedOffset(value);
+  calibrationStatus.textContent = value
+    ? '手动判定补偿 ' + signedOffset(value) + '：你的输入整体偏' + (value > 0 ? '晚' : '早') + '。'
+    : '当前没有启用判定补偿。';
+});
+calibrationButton.addEventListener('click', startCalibration);
+calibrationTap.addEventListener('click', tapCalibration);
+infoDialog.addEventListener('close', () => finishCalibration(true));
+paintJudgeOffset();
 
 $('#text-speed').value = String(textSpeed);
 $('#music-volume').value = String(musicVolume * 100);

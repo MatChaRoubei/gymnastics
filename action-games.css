@@ -1,0 +1,19 @@
+/* Let illustrated arenas size the stage, so controls cannot be clipped by it. */
+.forms-stage:is([data-game="tigerstrike"], [data-game="tide"]) { min-height: 0; background: radial-gradient(ellipse at top, #19405a, #071a2c); }
+.forms-stage:is([data-game="tigerstrike"], [data-game="tide"]) .forms-intro { position: relative; top: auto; left: auto; margin: 12px; width: fit-content; }
+.forms-stage:is([data-game="tigerstrike"], [data-game="tide"]) .forms-playfield { position: relative; inset: auto; padding: 5px 18px 18px; }
+.action-game { gap: 10px; width: min(640px, 100%); min-width: 0; }
+.action-game > p { font-size: 13px; }
+.action-canvas { display: block; width: 100%; height: auto; aspect-ratio: 2; border: 1px solid #e0cf99; border-radius: 8px; background: #102b40 center / cover; touch-action: none; }
+.action-canvas:focus-visible { outline: 2px solid #83e6d6; outline-offset: 3px; }
+.action-game .action-status { width: 100%; padding: 7px 8px; background: #071b30; border-radius: 5px; color: #f7e3af; font-size: 12px; min-height: 32px; }
+.action-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; }
+.action-controls button { flex: 1; min-width: 0; min-height: 48px; font-size: 13px; }
+.action-controls button:disabled { opacity: .5; cursor: default; }
+.action-controls button:active, .action-controls button:hover { transform: none; }
+@media (max-width: 650px) {
+  .forms-stage:is([data-game="tigerstrike"], [data-game="tide"]) .forms-playfield { padding: 5px 8px 12px; }
+  .action-controls { gap: 5px; }
+  .action-controls button { padding: 8px 4px; font-size: 11px; min-width: 0; }
+  .action-game .action-status { font-size: 10px; }
+}

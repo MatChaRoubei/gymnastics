@@ -42,7 +42,7 @@
   let state = 'ready', resolve, frame, lastStamp, remainingMs = 0, audioContext;
   let score = 0, correct = 0, errors = 0, streak = 0, total = 0, expectedPage = 1;
   let sparDeck = [], round = 0, composure = 3, insight = 0, roundAnswered = false, revealed = false;
-  let lastResult = null;
+  let lastResult = null, runSeed = 0, runRandom = Math.random;
 
   const feedback = text => { el('adventure-feedback').textContent = text; };
   const setState = next => { state = next; panel.dataset.state = next; };
@@ -76,12 +76,25 @@
     el('adventure-score').textContent = score + ' 分';
   }
 
-  function seededShuffle(items, seed) {
+  function createRunRandom() {
+    const values = new Uint32Array(1);
+    if (globalThis.crypto?.getRandomValues) crypto.getRandomValues(values);
+    runSeed = values[0] || ((Date.now() ^ Math.floor(performance.now() * 1000)) >>> 0);
+    let value = runSeed;
+    runRandom = () => {
+      value += 0x6D2B79F5;
+      let mixed = value;
+      mixed = Math.imul(mixed ^ mixed >>> 15, mixed | 1);
+      mixed ^= mixed + Math.imul(mixed ^ mixed >>> 7, mixed | 61);
+      return ((mixed ^ mixed >>> 14) >>> 0) / 4294967296;
+    };
+    panel.dataset.seed = String(runSeed);
+  }
+
+  function shuffled(items) {
     const result = [...items];
-    let value = seed * 997 + 41;
     for (let index = result.length - 1; index > 0; index--) {
-      value = (value * 9301 + 49297) % 233280;
-      const target = Math.floor(value / 233280 * (index + 1));
+      const target = Math.floor(runRandom() * (index + 1));
       [result[index], result[target]] = [result[target], result[index]];
     }
     return result;
@@ -93,8 +106,9 @@
     const items = [];
     for (let page = 1; page <= config.paperTotal; page++) items.push({ page, label: paperPages[page - 1] });
     for (let index = 0; index < config.decoyTotal; index++) items.push({ page: 0, label: decoys[index] });
-    seededShuffle(items, config.paperTotal + config.decoyTotal).forEach((item, index) => {
-      const [x, y, rotation] = positions[index % positions.length];
+    const shuffledPositions = shuffled(positions);
+    shuffled(items).forEach((item, index) => {
+      const [x, y, rotation] = shuffledPositions[index % shuffledPositions.length];
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'flying-paper' + (item.page ? '' : ' decoy');
       button.dataset.page = String(item.page);
@@ -139,8 +153,7 @@
   }
 
   function buildSparDeck() {
-    const offset = levelKey === 'easy' ? 0 : levelKey === 'normal' ? 2 : 4;
-    sparDeck = Array.from({ length: config.sparRounds }, (_, index) => attacks[(index * 2 + offset) % attacks.length]);
+    sparDeck = shuffled(attacks).slice(0, config.sparRounds);
   }
 
   function renderSparRound() {
@@ -250,6 +263,7 @@
   function start() {
     if (!['ready', 'done'].includes(state)) return;
     try { audioContext ||= new (window.AudioContext || window.webkitAudioContext)(); audioContext.resume().catch(() => {}); } catch { /* visual feedback remains */ }
+    createRunRandom();
     stopClock(); resultPanel.hidden = true; startButton.hidden = true; continueButton.hidden = true; pauseButton.hidden = false;
     score = correct = errors = streak = 0; round = 0; expectedPage = 1; roundAnswered = revealed = false; lastResult = null;
     composure = config.composure; insight = config.insight; total = modeKey === 'paper' ? config.paperTotal : config.sparRounds;
@@ -288,6 +302,8 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden && !panel.hidden && state === 'playing') togglePause(); });
   window.addEventListener('keydown', event => {
     if (panel.hidden || event.key !== 'Escape') return;
+    // 浮层之上还有原生对话框时（例如设置面板），Esc 应先交给对话框关闭。
+    if (document.querySelector('dialog[open]')) return;
     event.preventDefault(); event.stopImmediatePropagation(); if (!event.repeat) togglePause();
   });
 

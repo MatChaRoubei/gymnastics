@@ -1,5 +1,13 @@
 // Optional: PLAYWRIGHT_MODULE, BROWSER_EXE, WUSHU_BASE_URL.
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+function loadPlaywright() {
+  // 优先用 PLAYWRIGHT_MODULE 指定的模块；否则依次尝试 playwright / playwright-core。
+  const attempts = [process.env.PLAYWRIGHT_MODULE, 'playwright', 'playwright-core'].filter(Boolean);
+  for (const name of attempts) {
+    try { return require(name); } catch { /* 试下一个 */ }
+  }
+  throw new Error('未找到 Playwright：先 npm install，或用 PLAYWRIGHT_MODULE 指向已安装的模块。');
+}
+const { chromium } = loadPlaywright();
 const { pathToFileURL } = require('node:url');
 const path = require('node:path');
 const os = require('node:os');

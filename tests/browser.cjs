@@ -1,5 +1,13 @@
 // Optional: PLAYWRIGHT_MODULE, BROWSER_EXE, WUSHU_BASE_URL (including a site subdirectory).
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+function loadPlaywright() {
+  // 优先用 PLAYWRIGHT_MODULE 指定的模块；否则依次尝试 playwright / playwright-core。
+  const attempts = [process.env.PLAYWRIGHT_MODULE, 'playwright', 'playwright-core'].filter(Boolean);
+  for (const name of attempts) {
+    try { return require(name); } catch { /* 试下一个 */ }
+  }
+  throw new Error('未找到 Playwright：先 npm install，或用 PLAYWRIGHT_MODULE 指向已安装的模块。');
+}
+const { chromium } = loadPlaywright();
 const { pathToFileURL } = require('node:url');
 const path = require('node:path');
 const os = require('node:os');
@@ -196,6 +204,128 @@ async function assertFullCombo(page) {
   assert.equal(await page.evaluate(() => WushuSave.read().totalRuns), runs, '离开成绩页不能重复保存同一轮');
 }
 
+async function assertMashNeverScores(page) {
+  await chooseCharacter(page, { quick: true });
+  await click(page, '#practice-start');
+  await waitForPlaying(page);
+  await page.locator('#practice-hit').focus();
+  const rounds = await page.evaluate(() => WUSHU.difficulties.easy.rounds);
+  for (let round = 0; round < rounds; round++) {
+    await page.keyboard.press('Space');
+    await page.clock.runFor(24);
+    assert.match(await page.locator('#practice-feedback').textContent(), /太早/, '第一次过早出招只提醒');
+    await page.keyboard.press('Space');
+    await page.clock.runFor(24);
+    assert.match(await page.locator('#practice-feedback').textContent(), /抢拍/, '第二次过早出招应直接判错过');
+    await page.keyboard.press('Space');
+    // 每次按当前拍点补足剩余时间，本招结束即进入下一招，误差不会累积。
+    const remaining = await page.evaluate(() =>
+      (1 - parseFloat(document.querySelector('#beat-dot').style.left) / 100) * WUSHU.difficulties.easy.beatMs * 4);
+    await page.clock.runFor(Math.ceil(remaining) + 8);
+  }
+  // 收尾：循环可能刚好停在回合边界，再多跑几帧让末招结算。
+  await page.clock.runFor(600);
+  assert(await page.locator('#practice-continue').isVisible(), '连点也应走完整轮并进入结算');
+  assert.equal(await page.locator('#result-perfect').textContent(), '0', '连点不应拿到精准分');
+  assert.equal(await page.locator('#result-good').textContent(), '0', '连点不应拿到合格分');
+  assert.equal(await page.locator('#result-missed').textContent(), String(rounds), '抢拍连点应全部记为错过');
+  assert.equal(await page.locator('#result-combo').textContent(), '0', '抢拍应断开连击');
+  assert.equal(await page.locator('#result-grade').textContent(), 'C');
+  const record = await page.evaluate(() => WushuSave.read().modeRecords?.easy?.standard || null);
+  assert(record?.timing?.mashPenalties === rounds, '结算应记录抢拍判罚次数');
+  assert.match(await page.locator('#result-advice').textContent(), /抢拍/, '建议应指出抢拍问题');
+  await click(page, '#practice-continue');
+  await page.clock.runFor(32);
+  assert(await page.locator('#difficulty-screen').isVisible());
+}
+
+async function assertJudgeOffsetSetting(page) {
+  await click(page, '#help-button');
+  await page.clock.runFor(32);
+  assert(await page.locator('#calibration-button').isVisible(), '设置里应提供节奏校准');
+  await page.locator('#judge-offset').evaluate(node => { node.value = '60'; node.dispatchEvent(new Event('input', { bubbles: true })); });
+  await page.clock.runFor(32);
+  assert.equal(await page.locator('#judge-offset-value').textContent(), '+60 毫秒');
+  assert.equal(await page.evaluate(() => WushuSave.read().settings.judgeOffset), 60, '判定补偿应写入设置');
+  await click(page, '#info-dialog form button');
+  await page.clock.runFor(32);
+  await chooseCharacter(page, { quick: true });
+  assert.match(await page.locator('#practice-help').textContent(), /判定补偿 \+60 毫秒/, '练习应读取判定补偿');
+  await click(page, '#practice-exit');
+  await page.clock.runFor(32);
+  assert(await page.locator('#difficulty-screen').isVisible(), '退出练习应回到菜单');
+}
+
+async function assertCalibrationRun(page) {
+  await click(page, '#help-button');
+  await page.clock.runFor(32);
+  await click(page, '#calibration-button');
+  assert(await page.locator('#calibration-tap').isVisible(), '校准开始后应出现跟拍按钮');
+  // 每次都比提示音晚 30 毫秒点击，中位数应写入 +30。
+  await page.clock.runFor(730);
+  for (let beat = 0; beat < 8; beat++) {
+    await click(page, '#calibration-tap');
+    if (beat < 7) await page.clock.runFor(600);
+  }
+  assert.equal(await page.evaluate(() => WushuSave.read().settings.judgeOffset), 30, '8 次偏晚 30 毫秒应写入 +30');
+  assert.match(await page.locator('#calibration-status').textContent(), /已写入判定补偿 \+30 毫秒/);
+  assert(await page.locator('#calibration-button').isVisible(), '校准结束后应恢复开始按钮');
+  await click(page, '#info-dialog form button');
+  await page.clock.runFor(32);
+  assert(await page.locator('#info-dialog').isHidden());
+  assert.equal(await page.evaluate(() => WushuSave.read().settings.judgeOffset), 30, '关闭设置不应丢失校准结果');
+}
+
+async function assertImageAssets(browser) {
+  // 立绘从 PNG 换成 WebP 后，逐个确认页面里引用的图片真的能解码出像素。
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  currentPage = page;
+  page.on('pageerror', error => failures.push(error.message));
+  await page.goto(baseURL);
+  const sources = await page.evaluate(() =>
+    [...new Set([...document.querySelectorAll('img')].map(image => image.getAttribute('src')).filter(Boolean))]);
+  assert(sources.length >= 4, '应能读到页面里的四张角色图');
+  const broken = await page.evaluate(async list => {
+    const failed = [];
+    for (const source of list) {
+      const loaded = await new Promise(resolve => {
+        const probe = new Image();
+        probe.onload = () => resolve(probe.naturalWidth > 0 && probe.naturalHeight > 0);
+        probe.onerror = () => resolve(false);
+        probe.src = source;
+      });
+      if (!loaded) failed.push(source);
+    }
+    return failed;
+  }, sources);
+  assert.deepEqual(broken, [], '页面引用的每张图片都必须能加载');
+}
+
+async function assertAudioAssets(browser) {
+  // 配乐换格式后最容易出问题的是编解码：这里逐个解码，确认能真正播放。
+  const page = await browser.newPage({ viewport: { width: 900, height: 700 } });
+  currentPage = page;
+  page.on('pageerror', error => failures.push(error.message));
+  await page.goto(baseURL);
+  const sources = await page.evaluate(() => Object.entries(musicSources));
+  assert(sources.length >= 7, '应能读到全部配乐路径');
+  const failed = await page.evaluate(async list => {
+    const broken = [];
+    for (const [name, source] of list) {
+      const playable = await new Promise(resolve => {
+        const audio = new Audio();
+        const settle = value => { audio.onloadedmetadata = audio.onerror = null; audio.removeAttribute('src'); resolve(value); };
+        audio.onloadedmetadata = () => settle(audio.duration > 0);
+        audio.onerror = () => settle(false);
+        audio.src = source;
+      });
+      if (!playable) broken.push(`${name} ${source}`);
+    }
+    return broken;
+  }, sources);
+  assert.deepEqual(failed, [], '每个配乐都必须在浏览器里解码成功');
+}
+
 async function assertMobile(browser) {
   for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 844, height: 390 }]) {
     const page = await openPage(browser, viewport);
@@ -316,12 +446,28 @@ async function assertChoiceResumeAndEndings(page) {
     await assertFullCombo(comboPage);
     await comboPage.close();
     console.log('PASS: countdown pause, full perfect combo, S grade, spirit achievement, one judgment per move');
+    const mashPage = await openPage(browser);
+    await assertMashNeverScores(mashPage);
+    await mashPage.close();
+    console.log('PASS: mashing space always misses, combo breaks, penalty recorded, advice warns about 抢拍');
+    const offsetPage = await openPage(browser);
+    await assertJudgeOffsetSetting(offsetPage);
+    await offsetPage.close();
+    console.log('PASS: judge offset calibration control persists and reaches practice');
+    const calibrationPage = await openPage(browser);
+    await assertCalibrationRun(calibrationPage);
+    await calibrationPage.close();
+    console.log('PASS: 8-beat calibration measures a +30ms median and survives closing settings');
     const storyPage = await openPage(browser);
     await assertChoiceResumeAndEndings(storyPage);
     await storyPage.close();
     console.log('PASS: all nine choices, reload + resume, three endings, journal');
     await assertMobile(browser);
     console.log('PASS: 390px / 320px / short landscape button bounds and reachable practice controls');
+    await assertImageAssets(browser);
+    console.log('PASS: every <img> on the page decodes (png → webp swap)');
+    await assertAudioAssets(browser);
+    console.log('PASS: every music track decodes in the browser after the webp/mp3 asset swap');
     const page = await openPage(browser);
     await assertSaveRecovery(page);
     await page.close();

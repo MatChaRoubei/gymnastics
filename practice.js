@@ -16,7 +16,52 @@
   let spirit = 0, awakenedHits = 0, spiritBurstUsed = false, tigerPerfect = false;
   let counts, timings, runMastery, judged, origin, frame, pauseAt, lastBeat, audioContext, resolve;
   let lastResult = null, earlyThisRound = false, isMuted = () => false;
+  let runSeed = 0, runRandom = Math.random;
+  let judgeOffset = 0, earlyPresses = 0;
   const nonnegative = value => Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
+  // 每招只给一次“太早”的提醒；继续抢拍即按错过结算，避免连点必定命中。
+  const EARLY_GRACE = 1;
+  const normalizeOffset = value => {
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.round(Math.min(200, Math.max(-200, number))) : 0;
+  };
+  // 结算与进度共用预计时长，避免开局后“约 xx 秒”被招式进度覆盖。
+  const estimateSeconds = () => Math.round((chart.length * roundMs + beatMs * 3) / 1000);
+
+  function createRunRandom() {
+    const values = new Uint32Array(1);
+    if (globalThis.crypto?.getRandomValues) crypto.getRandomValues(values);
+    runSeed = values[0] || ((Date.now() ^ Math.floor(performance.now() * 1000)) >>> 0);
+    let value = runSeed;
+    runRandom = () => {
+      value += 0x6D2B79F5;
+      let mixed = value;
+      mixed = Math.imul(mixed ^ mixed >>> 15, mixed | 1);
+      mixed ^= mixed + Math.imul(mixed ^ mixed >>> 7, mixed | 61);
+      return ((mixed ^ mixed >>> 14) >>> 0) / 4294967296;
+    };
+    panel.dataset.seed = String(runSeed);
+  }
+
+  function shuffled(items) {
+    const result = [...items];
+    for (let index = result.length - 1; index > 0; index--) {
+      const target = Math.floor(runRandom() * (index + 1));
+      [result[index], result[target]] = [result[target], result[index]];
+    }
+    return result;
+  }
+
+  function buildChart() {
+    if (modeKey === 'tutorial') return [0, 1, 4, 7].map(index => moves[index % moves.length]);
+    const result = [];
+    while (result.length < level.rounds) {
+      const batch = shuffled(moves);
+      if (result.length && batch.length > 1 && result.at(-1) === batch[0]) [batch[0], batch[1]] = [batch[1], batch[0]];
+      result.push(...batch);
+    }
+    return result.slice(0, level.rounds);
+  }
 
   // Keep the original page and public API usable without a framework.
   const brief = document.createElement('div');
@@ -59,9 +104,9 @@
     stopClock(); stopMoveVoice();
     round = points = combo = bestCombo = spirit = awakenedHits = 0;
     spiritBurstUsed = tigerPerfect = false;
-    judged = false; pausedState = null; lastResult = null;
+    judged = false; pausedState = null; lastResult = null; earlyPresses = 0;
     counts = { '精准': 0, '合格': 0, '错过': 0 };
-    timings = { early: 0, late: 0, onTime: 0, totalOffset: 0, samples: 0, earlyAttempts: 0 };
+    timings = { early: 0, late: 0, onTime: 0, totalOffset: 0, samples: 0, earlyAttempts: 0, earlyPresses: 0, mashPenalties: 0 };
     runMastery = {};
     card.classList.remove('awakened', 'hit-perfect');
     el('combo-callout').classList.remove('show'); el('combo-callout').textContent = '';
@@ -72,7 +117,8 @@
     updateSpirit(); stats();
   }
   function updateHelp() {
-    el('practice-help').textContent = modes[modeKey].introduction + ' ' + style.name + ' · ' + style.motto + '。按空格、Enter 或「出招」。';
+    el('practice-help').textContent = modes[modeKey].introduction + ' ' + style.name + ' · ' + style.motto + '。按空格、Enter 或「出招」。' +
+      (judgeOffset ? ' 判定补偿 ' + (judgeOffset > 0 ? '+' : '') + judgeOffset + ' 毫秒，可在「玩法与设置」里校准。' : '');
   }
   function updateTargetWindow() {
     const width = (level.good + style.tolerance) * 2 / roundMs * 100;
@@ -82,10 +128,10 @@
   }
   function cue(playVoice = true) {
     const move = chart[round];
-    judged = false; earlyThisRound = false; lastBeat = -1;
+    judged = false; earlyThisRound = false; earlyPresses = 0; lastBeat = -1;
     el('move-name').textContent = move.name;
     el('move-tip').textContent = (move.heritage ? move.heritage + ' · ' : '') + move.tip;
-    el('practice-progress').textContent = modes[modeKey].title + ' · ' + (round + 1) + ' / ' + chart.length + ' 招';
+    el('practice-progress').textContent = modes[modeKey].title + ' · ' + (round + 1) + ' / ' + chart.length + ' 招 · 约 ' + estimateSeconds() + ' 秒';
     targetMs = move.targetBeat * beatMs;
     updateTargetWindow();
     panel.querySelectorAll('.beat-labels span').forEach((item, index) => {
@@ -145,11 +191,12 @@
     const grade = rate === 1 && precision >= .8 ? 'S' : rate >= .85 && precision >= .5 ? 'A' : rate >= .6 ? 'B' : 'C';
     return {
       points, accuracy: Math.round(rate * 100), bestCombo, counts: { ...counts },
-      level: levelKey, style: styleKey, mode: modeKey, grade, aborted,
-      timing: { early: timings.early, late: timings.late, onTime: timings.onTime, meanOffsetMs: timings.samples ? Math.round(timings.totalOffset / timings.samples) : 0, earlyAttempts: timings.earlyAttempts },
+      level: levelKey, style: styleKey, mode: modeKey, grade, aborted, judgeOffset,
+      timing: { early: timings.early, late: timings.late, onTime: timings.onTime, meanOffsetMs: timings.samples ? Math.round(timings.totalOffset / timings.samples) : 0, earlyAttempts: timings.earlyAttempts, earlyPresses: timings.earlyPresses, mashPenalties: timings.mashPenalties },
     };
   }
   function advice() {
+    if (timings.mashPenalties) return '嘉豪：这轮有 ' + timings.mashPenalties + ' 次抢拍被判错过。每招只有一次“太早”的提醒，之后连点会直接算漏拍。';
     if (!timings.samples) return '嘉豪：先盯住写着「出招」的目标拍，光点碰到金色中心线时按一次。试试四式入门课。';
     if (timings.earlyAttempts > chart.length / 3) return '嘉豪：你有些抢拍。招名出现只是预告，等光点进入金色区再出招。';
     const average = timings.totalOffset / timings.samples;
@@ -241,7 +288,7 @@
       panel.querySelectorAll('.beat-labels span').forEach((item, index) => item.classList.toggle('active', index === beat));
     }
     el('beat-dot').style.left = (elapsed / roundMs * 100) + '%';
-    if (!judged && elapsed > targetMs + level.good + style.tolerance) judge('错过', 0);
+    if (!judged && elapsed > targetMs + level.good + style.tolerance + Math.max(0, judgeOffset)) judge('错过', 0);
     hitButton.disabled = judged; frame = requestAnimationFrame(update);
   }
   function hit() {
@@ -249,11 +296,21 @@
     const now = performance.now();
     stopClock(); update(now);
     if (state !== 'playing' || judged) return;
-    const delta = now - origin - targetMs, goodWindow = level.good + style.tolerance;
+    const delta = now - origin - targetMs - judgeOffset, goodWindow = level.good + style.tolerance;
     const perfectWindow = level.perfect + Math.round(style.tolerance * .35);
     if (delta < -goodWindow) {
+      earlyPresses++; timings.earlyPresses++;
       if (!earlyThisRound) { timings.earlyAttempts++; earlyThisRound = true; }
-      feedback('太早啦，等第' + beatNames[chart[round].targetBeat] + '拍的金色中心线！'); return;
+      if (earlyPresses <= EARLY_GRACE) {
+        feedback('太早啦，等第' + beatNames[chart[round].targetBeat] + '拍的金色中心线！');
+        return;
+      }
+      // 连续抢拍不再免费：这一式按错过计算，连点无法再换来必中的合格分。
+      timings.mashPenalties++;
+      judge('错过', 0);
+      feedback('抢拍 ' + earlyPresses + ' 次：这一式按错过计算，等光点进金色区再出招。');
+      hitButton.disabled = true;
+      return;
     }
     const error = Math.abs(delta);
     judge(error <= perfectWindow ? '精准' : error <= goodWindow ? '合格' : '错过', error <= perfectWindow ? 100 : error <= goodWindow ? 60 : 0, delta);
@@ -262,6 +319,8 @@
     if (state !== 'ready' && state !== 'done') return;
     try { audioContext ||= new (window.AudioContext || window.webkitAudioContext)(); audioContext.resume().catch(() => {}); }
     catch { /* Visual beats remain available without audio support. */ }
+    createRunRandom();
+    if (modeKey !== 'tutorial') chart = buildChart();
     resetRun(); setState('countdown');
     startButton.hidden = continueButton.hidden = true; hitButton.hidden = pauseButton.hidden = false; hitButton.disabled = true;
     pauseButton.textContent = '暂停'; el('practice-title').textContent = options.title || modes[modeKey].title;
@@ -307,6 +366,8 @@
   window.addEventListener('keydown', event => {
     if (panel.hidden) return;
     if (event.key === 'Escape') {
+      // 浮层之上还有原生对话框时（例如设置面板），Esc 应先交给对话框关闭。
+      if (document.querySelector('dialog[open]')) return;
       event.preventDefault(); event.stopImmediatePropagation();
       if (!event.repeat) togglePause();
       return;
@@ -331,18 +392,19 @@
       modeKey = Object.hasOwn(modes, options.mode) ? options.mode : 'standard';
       levelKey = Object.hasOwn(window.WUSHU.difficulties, difficulty) ? difficulty : 'easy';
       level = { ...window.WUSHU.difficulties[levelKey] };
-      const savedStyle = window.WushuSave.read().settings?.practiceStyle;
+      const savedSettings = window.WushuSave.read().settings || {};
+      const savedStyle = savedSettings.practiceStyle;
       styleKey = Object.hasOwn(window.WUSHU.styles, savedStyle) ? savedStyle : 'steady'; style = window.WUSHU.styles[styleKey];
+      judgeOffset = normalizeOffset(savedSettings.judgeOffset);
       if (modeKey === 'tutorial') {
         chart = [0, 1, 4, 7].map(index => moves[index % moves.length]);
         level.beatMs = Math.max(950, level.beatMs); level.good = Math.max(350, level.good); level.perfect = Math.max(150, level.perfect);
-      } else if (modeKey === 'relay') chart = [0, 3, 1, 5, 6, 4, 2, 7].map(index => moves[index % moves.length]);
-      else chart = Array.from({ length: level.rounds }, (_, index) => moves[index % moves.length]);
+      } else chart = Array.from({ length: level.rounds }, (_, index) => moves[index % moves.length]);
       beatMs = level.beatMs; roundMs = beatMs * 4; resetRun(); setState('ready'); panel.hidden = false; panel.dataset.mode = modeKey;
       el('practice-title').textContent = options.title || modes[modeKey].title;
       panel.querySelector('.eyebrow').textContent = '武术操 · ' + (modeKey === 'tutorial' ? '慢速入门' : level.name + '挑战');
       updateHelp(); cue(false);
-      el('practice-progress').textContent = (modeKey === 'tutorial' ? '慢速' : level.name) + ' · ' + chart.length + ' 招 · 约 ' + Math.round((chart.length * roundMs + beatMs * 3) / 1000) + ' 秒';
+      el('practice-progress').textContent = (modeKey === 'tutorial' ? '慢速' : level.name) + ' · ' + chart.length + ' 招 · 约 ' + estimateSeconds() + ' 秒';
       panel.querySelectorAll('.style-choice button').forEach(button => {
         button.disabled = false; button.classList.toggle('active', button.dataset.style === styleKey);
       });

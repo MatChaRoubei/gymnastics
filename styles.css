@@ -3,7 +3,7 @@
   font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
 }
 
-.practice { position: fixed; inset: 0; z-index: 8; overflow-y: auto; display: grid; place-items: center; padding: 70px 20px 24px; background: #061b3599; }
+.practice { position: fixed; inset: 0; z-index: 8; overflow-y: auto; display: grid; place-items: start center; padding: 70px 20px 24px; background: #061b3599; scrollbar-gutter: stable; }
 .practice[hidden], .practice button[hidden] { display: none; }
 .practice-panel { width: min(800px, 100%); padding: clamp(20px, 4vw, 40px); border: 2px solid #e6cc87; border-radius: 22px; background: #0a2449ed; color: #f6f3e8; text-align: center; box-shadow: 0 20px 70px #0006; }
 .practice-panel h2 { font-size: clamp(26px, 4vw, 38px); margin: 10px 0; }
@@ -89,6 +89,19 @@ dialog::backdrop { background: #031020bb; }
 #info-body { white-space: pre-wrap; line-height: 1.8; }
 #settings-controls { display: grid; gap: 16px; margin-block: 24px; }
 #settings-controls label { display: flex; gap: 12px; align-items: center; }
+#settings-controls input[type="range"] { flex: 1; min-width: 120px; margin: 0; }
+#judge-offset-value { min-width: 78px; text-align: right; color: #ffe2a1; font-variant-numeric: tabular-nums; }
+#calibration-box { display: grid; gap: 10px; padding: 14px; border: 1px solid #ffffff2e; border-radius: 12px; background: #06203c; }
+#calibration-hint { margin: 0; color: #b9cde0; font-size: 12px; line-height: 1.7; }
+.calibration-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+#calibration-pulse { width: 26px; height: 26px; border: 2px solid #6f8bab; border-radius: 50%; background: #0b2a4a; }
+#calibration-pulse.tick { animation: calibration-tick .32s ease-out; }
+#calibration-status { margin: 0; color: #ffe2a1; font-size: 13px; }
+@keyframes calibration-tick {
+  0% { background: #ffe08c; border-color: #ffe08c; transform: scale(1.18); }
+  100% { background: #0b2a4a; border-color: #6f8bab; transform: scale(1); }
+}
+.reduce-motion #calibration-pulse.tick { animation: none; background: #ffe08c; }
 .reduce-motion .sight-screen::before, .reduce-motion .continue-mark { animation: none; }
 #move-sprite { display: block; margin: 0 auto; width: 120px; height: 140px; object-fit: contain; }
 @media (max-width: 620px) {

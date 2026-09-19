@@ -31,3 +31,10 @@ test-results/
 ._*
 Spotlight-V100/
 Trashes/
+
+# 本地资源原型 / 未发布资产：保留在磁盘，但不提交、不随 GitHub Pages 发布
+_source/
+
+# 个人 / 本地文件（避免 git add -A 误传到公开仓库）
+.workbuddy/
+台词（不公开）.txt

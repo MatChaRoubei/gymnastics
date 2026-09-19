@@ -14,7 +14,13 @@
 练习可倒数、暂停、退出、重试；网页切到后台会自动暂停。难度和模式分别记录最高分。
 
 剧情支持点击、空格、回车、左右方向键。回看不会重播语音，配音播放时不会误翻页。
-八式节奏使用空格、回车或出招按钮；八式百炼会依动作改用左右键、长按、连按、滑杆、九宫格与时机点击，画面中的操作区也都能直接触摸。
+八式节奏使用空格、回车或出招按钮；八式百炼会依动作改用左右键、长按、连按、滑杆、木人格斗与弹幕身法，画面中的操作区也都能直接触摸。
+
+百炼第五式「黑虎」：J 轻拳、按住 K 防守、L 消耗 50 气打重拳。看黄色预兆，防住后在收招破绽内反击；长时间防守会耗尽耐力。第六式「回潮」：方向键 / WASD 移动、Shift 慢移、X 清场一次；手机拖动画面移动。只有中心白点受击，擦过弹道可加分。波次位置与木人间歇每局随机。
+
+新增美术为 AI 生成的原创训练场、回潮庭院与透明木人，三个 WebP 合计约 308 KiB，进入对应动作才加载。素材说明见 `resources/ART_NOTES.md`。
+每招只给一次“太早”的提醒；同一招里继续抢拍会直接判为错过并断开连击，结算会记录抢拍判罚次数，连点无法再换来必中的分数。
+蓝牙耳机或外放会让输入整体偏晚：设置里的“判定补偿”可以手动微调，也可以跟着 8 次提示音自动校准（取中位数，范围 ±200 毫秒），练习界面会显示当前生效值。
 剧情、选择、最高分、招式熟练度、成就、结局和设置存储在 localStorage；刷新页面可继续故事。
 清理网站数据会丢失记录，不同域名或浏览器之间不互通。浏览器禁止自动播放时，先点击页面或“开启声音”。
 
@@ -32,6 +38,16 @@
 ### 配乐
 
 菜单继续使用 `resources/sound/music/menu.mp3`。剧情场景、八式百炼、风中名单、拆招预演、嘉豪接拍和结尾使用 `resources/sound/music/download-candidates/` 中按 CC0 授权下载的配乐；切换挑战时降低音量，挑战结束后恢复当前场景音乐。曲目来源、作者与许可证记录在该目录的 `SOURCES.md`。
+配乐统一为 44.1 kHz MP3（音乐 128 kbps、紧张场景 96 kbps），不再使用 Ogg Vorbis（Safari/iOS 不支持）与未压缩 WAV（单首 6 MB）。
+
+### 资源体积
+
+线上只保留运行需要的文件，`resources/` 约 11 MB：
+
+- 四张角色立绘由 PNG（2.1 MB）转为 WebP（0.18 MB，仍然保留透明通道）。
+- 配乐由 wav/ogg（13.3 MiB）转为 MP3（3.9 MiB），头像等小图沿用原有 WebP。
+- 转 WebP 前的 PNG/JPG 源图、未使用的立绘与音效、以及音频原始文件都移到了仓库外并被 `.gitignore` 忽略的 `_source/`，既不提交也不随 GitHub Pages 发布；详见 `_source/README.md`。
+- 重新生成：`ffmpeg -i 原图.png -c:v libwebp -quality 82 -compression_level 6 输出.webp`、`ffmpeg -i 音频.wav -c:a libmp3lame -b:a 128k -ar 44100 输出.mp3`。
 
 ### 招式素材
 
@@ -68,13 +84,20 @@ scenes 内 image 为背景相对路径，music 为配乐路径；null 使用现�
 
 ## 验证
 
-node --check config.js
-node --check story.js
-node --check journey.js
-node --check practice.js
-node --check adventure.js
-node --check forms.js
+```
+npm install        # 只装 playwright-core，不下载浏览器
+npm run check      # node --check 全部脚本
+npm run test       # 语法检查 + tests/browser.cjs + tests/cast.cjs
+npm run test:all   # 再加 tests/forms.cjs 与 tests/adventure.cjs
+```
 
-tests/browser.cjs、tests/adventure.cjs 与 tests/forms.cjs 是浏览器流程回归脚本，需要 Playwright。
-可通过 PLAYWRIGHT_MODULE 指向已安装模块，BROWSER_EXE 指向本机 Chromium/Chrome。
-测试覆盖男女开场与配音、嘉豪转身、三档难度、教程、节奏模式、八种动作游戏、观察与读势挑战、暂停与结算、剧情续玩、全部选择与结局，以及 320px 手机布局。
+`playwright-core` 不自带浏览器，先指向本机 Chrome/Chromium：
+
+```
+$env:BROWSER_EXE = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+npm run test
+```
+
+也可以用 `PLAYWRIGHT_MODULE` 指向已有的 Playwright 模块，用 `WUSHU_BASE_URL` 指向部署后的地址（含子目录）。
+`tests/forms.cjs` 与 `tests/adventure.cjs` 目前是既有失败（脚本里的 `fastForward` 计时用法与玩法改动后未同步，与本文档描述的玩法无关），所以默认的 `npm run test` 只跑全绿的两个脚本。
+测试覆盖男女开场与配音、嘉豪转身、三档难度、教程、节奏模式、抢拍判罚、判定补偿校准、八种动作游戏、观察与读势挑战、暂停与结算、剧情续玩、全部选择与结局、320px 手机布局，以及资源解码（页面全部 `<img>` 与七个配乐路径都必须真的能加载和播放）。

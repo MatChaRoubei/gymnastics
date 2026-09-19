@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="adventure.css" />
     <link rel="stylesheet" href="forms.css" />
     <link rel="stylesheet" href="campus.css" />
+    <link rel="stylesheet" href="action-games.css" />
   </head>
   <body>
     <main class="game" id="game">
@@ -23,7 +24,7 @@
         <div class="difficulty-panel" aria-label="难度选择">
         <p class="eyebrow">高一三班 · 新生入学须知</p>
         <h1 id="game-title">武术操挑战</h1>
-        <p class="subtitle">开学第一天，认识了一位神。<br />目前正在被门卫要求擦留言板。</p>
+        <p class="subtitle">开学第一天，认识了一位神。<br />还有处理异变的、招鼓手的，以及等保底的。</p>
         <p class="campus-stamp">校园喜剧 / 动作小游戏</p>
         <ol class="journey-steps" aria-label="故事篇章">
           <li><span>01</span> 校门奇遇</li><li><span>02</span> 八式百炼</li><li><span>03</span> 风中名单</li><li><span>04</span> 拆招接拍</li>
@@ -78,12 +79,12 @@
         </div>
         <div class="character-list" role="list">
           <button class="character-card male" type="button" data-character="男同学" role="listitem">
-            <img src="resources/character/male_back_start.png" alt="男同学角色" loading="lazy" decoding="async" />
+            <img src="resources/character/male_back_start.webp" alt="男同学角色" loading="lazy" decoding="async" />
             <span>男同学</span>
             <small class="character-note">「你豪王来了！」<br />开场先把气势拉满</small>
           </button>
           <button class="character-card female" type="button" data-character="女同学" role="listitem">
-            <img src="resources/character/female_back_start.png" alt="女同学角色" loading="lazy" decoding="async" />
+            <img src="resources/character/female_back_start.webp" alt="女同学角色" loading="lazy" decoding="async" />
             <span>女同学</span>
             <small class="character-note">「有点期待呢。」<br />暂时还不知道会遇见谁</small>
           </button>
@@ -101,11 +102,13 @@
         <span class="chapter-label" id="chapter-label">第一幕 · 初来乍到</span>
         <div class="story-status"><span id="bond-status">同窗 · 初识</span><span id="chapter-progress"></span></div>
         <div class="jiahao-character" id="jiahao-character" aria-hidden="true">
-          <img class="jiahao-image jiahao-back" src="resources/character/jiahao_back_start.png" alt="" loading="lazy" decoding="async" />
-          <img class="jiahao-image jiahao-front" src="resources/character/jiahao_front_start.png" alt="" loading="lazy" decoding="async" />
+          <img class="jiahao-image jiahao-back" src="resources/character/jiahao_back_start.webp" alt="" loading="lazy" decoding="async" />
+          <img class="jiahao-image jiahao-front" src="resources/character/jiahao_front_start.webp" alt="" loading="lazy" decoding="async" />
         </div>
         <div class="novel-dialogue" id="novel-dialogue" role="button" tabindex="0" aria-label="点击、按空格或回车继续对话">
+          <img id="cast-portrait" class="cast-portrait" alt="" aria-hidden="true" decoding="async" hidden />
           <p class="speaker" id="speaker" aria-hidden="true"></p>
+          <span class="cast-role" id="cast-role" aria-hidden="true"></span>
           <p class="dialogue-text" id="sight-title" aria-live="polite"></p>
           <span id="dialogue-hint" class="dialogue-hint">点击 / 空格 / Enter 继续</span>
           <span class="continue-mark" aria-hidden="true">▼</span>
@@ -180,7 +183,7 @@
               <div class="spar-arena">
                 <div class="player-marker"><span>我</span><small id="player-composure">定力 ◆◆◆</small></div>
                 <div id="spar-cue" class="spar-cue" aria-live="polite"><span id="cue-kind">候</span><strong id="cue-title">观察嘉豪的起势</strong><p id="cue-text">动作出现后，选择合适的回应。</p></div>
-                <img src="resources/character/jiahao_front_start.png" alt="嘉豪正在示范" loading="lazy" decoding="async" />
+                <img src="resources/character/jiahao_front_start.webp" alt="嘉豪正在示范" loading="lazy" decoding="async" />
               </div>
               <p class="counter-guide"><span>直来宜让</span><span>虚引宜守</span><span>绕侧宜截</span></p>
               <div id="tactic-options" class="tactic-options" aria-label="选择回应"></div>
@@ -250,6 +253,16 @@
           <label>文字速度 <select id="text-speed"><option value="65">慢</option><option value="40">标准</option><option value="20">快</option><option value="0">整句</option></select></label>
           <label>音乐音量 <input id="music-volume" type="range" min="0" max="50" value="24" /></label>
           <label><input id="motion-toggle" type="checkbox" /> 减少画面晃动</label>
+          <label>判定补偿 <input id="judge-offset" type="range" min="-200" max="200" step="5" value="0" /><span id="judge-offset-value">0 毫秒</span></label>
+          <div id="calibration-box">
+            <p id="calibration-hint">跟着 8 次提示音点击，自动测出你的输入延迟；也可以拖动上面的滑杆手动微调。正值代表你习惯偏晚出手。</p>
+            <div class="calibration-actions">
+              <button type="button" id="calibration-button">开始校准</button>
+              <button type="button" id="calibration-tap" hidden>跟拍点击</button>
+              <span id="calibration-pulse" aria-hidden="true"></span>
+            </div>
+            <p id="calibration-status" role="status">当前没有启用判定补偿。</p>
+          </div>
         </div>
         <form method="dialog"><button>关闭</button></form>
       </dialog>
@@ -263,6 +276,7 @@
     <script src="config.js"></script>
     <script src="practice.js"></script>
     <script src="adventure.js"></script>
+    <script src="action-games.js"></script>
     <script src="forms.js"></script>
     <script src="story.js"></script>
     <script src="journey.js"></script>

@@ -11,8 +11,8 @@
     '移动风羽对准金圈，再亮掌穿过三道风门。',
     '让左右两掌尽量同时点亮，三次合劲开门。',
     '按住蓄力，在力量进入金色区域时松开落步。',
-    '快速击中亮起的目标，别被下一处拳影抢先。',
-    '观察潮珠沿圆环回转，在经过金门时收回身势。',
+    '木人攻防：看预兆防守，抓硬直反击，攒气打出黑虎重拳。',
+    '回潮身法：移动白点穿过弹幕，擦弹得分，危急时清场一次。',
     '连续推掌维持力量，让推力稳定停在金色区间。',
     '跟随光环呼吸，在扩张与收拢的顶点完成归元。',
   ];
@@ -25,6 +25,7 @@
   let levelKey = 'easy', config = difficulty.easy, options = {}, isMuted = () => false;
   let state = 'ready', resolve, frame, lastStamp = 0, runtime = null, audioContext;
   let moveIndex = 0, points = 0, scores = [], formDetails = [], lastResult = null;
+  let runSeed = 0, runRandom = Math.random;
 
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
   const safeNumber = value => Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
@@ -35,6 +36,23 @@
     if (text !== undefined) node.textContent = text;
     return node;
   };
+
+  function createRunRandom() {
+    const values = new Uint32Array(1);
+    if (globalThis.crypto?.getRandomValues) crypto.getRandomValues(values);
+    runSeed = values[0] || ((Date.now() ^ Math.floor(performance.now() * 1000)) >>> 0);
+    let value = runSeed;
+    runRandom = () => {
+      value += 0x6D2B79F5;
+      let mixed = value;
+      mixed = Math.imul(mixed ^ mixed >>> 15, mixed | 1);
+      mixed ^= mixed + Math.imul(mixed ^ mixed >>> 7, mixed | 61);
+      return ((mixed ^ mixed >>> 14) >>> 0) / 4294967296;
+    };
+    panel.dataset.seed = String(runSeed);
+  }
+
+  const randomBetween = (min, max) => min + runRandom() * (max - min);
 
   function setState(next) {
     state = next; panel.dataset.state = next;
@@ -120,7 +138,11 @@
   function renderSalute() {
     const shell = gameShell('左右合礼', '跟随方向提示完成连拍。键盘可用 A / D 或左右方向键。');
     const length = levelKey === 'easy' ? 4 : levelKey === 'normal' ? 6 : 8;
-    const sequence = Array.from({ length }, (_, index) => index % 2 ? 'right' : 'left');
+    const sequence = [];
+    while (sequence.length < length) {
+      const previous = sequence.at(-1), beforePrevious = sequence.at(-2);
+      sequence.push(previous && previous === beforePrevious ? (previous === 'left' ? 'right' : 'left') : (runRandom() < .5 ? 'left' : 'right'));
+    }
     const sequenceRow = make('div', 'salute-sequence');
     const tokens = sequence.map(side => make('span', '', side === 'left' ? '左' : '右'));
     tokens.forEach(token => sequenceRow.append(token)); tokens[0].classList.add('current');
@@ -153,7 +175,14 @@
 
   function renderCrane() {
     const shell = gameShell('风门引掌', '拖动风羽对准金圈，按“亮掌”确认。键盘可用方向键微调。');
-    const targetValues = levelKey === 'easy' ? [24, 72, 45] : levelKey === 'normal' ? [18, 79, 48] : [12, 84, 37, 66];
+    const gateCount = levelKey === 'hard' ? 4 : 3;
+    const targetValues = [];
+    while (targetValues.length < gateCount) {
+      let target;
+      do target = Math.round(randomBetween(12, 88));
+      while (targetValues.some(value => Math.abs(value - target) < 18));
+      targetValues.push(target);
+    }
     const track = make('div', 'crane-track'), target = make('i', 'crane-target'), cursor = make('i', 'crane-cursor');
     track.append(target, cursor);
     const range = document.createElement('input');
@@ -217,11 +246,12 @@
   function renderTigerStep() {
     const shell = gameShell('蓄势落步', '按住蓄力，力量进入金色区域时松开。空格键同样支持按住与松开。');
     const meter = make('div', 'power-meter'), fill = make('i'), label = make('span', '', '0%');
-    meter.style.setProperty('--zone-left', levelKey === 'easy' ? '55%' : levelKey === 'normal' ? '63%' : '68%');
-    meter.style.setProperty('--zone-width', levelKey === 'easy' ? '28%' : levelKey === 'normal' ? '20%' : '14%');
+    const half = levelKey === 'easy' ? 14 : levelKey === 'normal' ? 10 : 7;
+    const center = Math.round(randomBetween(57 + half, 94 - half));
+    meter.style.setProperty('--zone-left', (center - half) + '%');
+    meter.style.setProperty('--zone-width', (half * 2) + '%');
     meter.append(fill, label);
     const hold = make('button', 'hold-button', '按住蓄势'); hold.type = 'button'; shell.append(meter, hold);
-    const center = levelKey === 'easy' ? 69 : levelKey === 'normal' ? 73 : 75, half = levelKey === 'easy' ? 14 : levelKey === 'normal' ? 10 : 7;
     let power = 0, holding = false, attempts = 0, scoreSum = 0;
     const paint = () => { meter.style.setProperty('--power', power + '%'); label.textContent = Math.round(power) + '%'; hold.classList.toggle('active', holding); };
     const begin = () => { if (state === 'playing') { holding = true; hold.textContent = '松开落步！'; } };
@@ -258,11 +288,12 @@
     shell.append(grid);
     const total = levelKey === 'easy' ? 5 : levelKey === 'normal' ? 6 : 7;
     const period = levelKey === 'easy' ? 1500 : levelKey === 'normal' ? 1100 : 850;
-    let active = -1, age = 0, resolved = 0, hits = 0, scoreSum = 0, seed = 2;
+    let active = -1, previous = -1, age = 0, resolved = 0, hits = 0, scoreSum = 0;
     const spawn = () => {
       buttons.forEach(button => { button.classList.remove('target'); button.textContent = String(Number(button.dataset.index) + 1); });
       if (resolved >= total) { completeRound(scoreSum / total, '命中 ' + hits + ' / ' + total + ' 个拳靶。黑虎要快，也要先找准空隙。'); return; }
-      active = seed % 9; seed = (seed * 5 + 3) % 9; age = 0;
+      do active = Math.floor(runRandom() * 9); while (active === previous);
+      previous = active; age = 0;
       buttons[active].classList.add('target'); buttons[active].textContent = '击';
     };
     const miss = () => { scoreSum += 0; resolved++; tone(170); feedback('拳影散了，下一处！'); spawn(); };
@@ -287,7 +318,10 @@
     const shell = gameShell('闽江回潮', '潮珠经过金门时按“回身”。空格键也可以收势。');
     const dial = make('div', 'tide-dial'), bead = make('i', 'tide-bead'), gate = make('i', 'tide-gate');
     dial.append(bead, gate); const button = make('button', '', '回身 · 空格'); button.type = 'button'; shell.append(dial, button);
-    const gates = levelKey === 'hard' ? [35, 145, 255, 320] : [45, 165, 285];
+    const gateCount = levelKey === 'hard' ? 4 : 3;
+    const startAngle = Math.round(randomBetween(15, 110));
+    const spacing = 360 / gateCount;
+    const gates = Array.from({ length: gateCount }, (_, index) => Math.round((startAngle + index * spacing + randomBetween(-18, 18) + 360) % 360));
     let angle = 0, gateIndex = 0, scoreSum = 0;
     const paint = () => { bead.style.setProperty('--angle', angle + 'deg'); gate.style.setProperty('--gate-angle', gates[gateIndex] + 'deg'); };
     const turn = () => {
@@ -368,7 +402,9 @@
     paint(); button.focus({ preventScroll: true });
   }
 
-  const renderers = [renderSalute, renderCrane, renderUnion, renderTigerStep, renderTigerStrike, renderTide, renderPush, renderBreath];
+  const actionAPI = () => ({ gameShell, setRuntime, complete: completeRound, feedback, tone, level: levelKey, random: runRandom, playing: () => state === 'playing' });
+  const renderers = [renderSalute, renderCrane, renderUnion, renderTigerStep,
+    () => window.WushuActionGames.fight(actionAPI()), () => window.WushuActionGames.tide(actionAPI()), renderPush, renderBreath];
 
   function showMove(index) {
     moveIndex = index; const move = moves[index];
@@ -384,6 +420,7 @@
   function startSession() {
     if (!['ready', 'done'].includes(state)) return;
     try { audioContext ||= new (window.AudioContext || window.webkitAudioContext)(); audioContext.resume().catch(() => {}); } catch { /* visual game remains */ }
+    createRunRandom();
     points = 0; scores = []; formDetails = []; lastResult = null; moveIndex = 0;
     el('forms-progress-fill').style.width = '0%'; showMove(0);
   }
@@ -472,7 +509,11 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden && !panel.hidden && state === 'playing') togglePause(); });
   window.addEventListener('keydown', event => {
     if (panel.hidden) return;
-    if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); if (!event.repeat) togglePause(); return; }
+    if (event.key === 'Escape') {
+      // 浮层之上还有原生对话框时（例如设置面板），Esc 应先交给对话框关闭。
+      if (document.querySelector('dialog[open]')) return;
+      event.preventDefault(); event.stopImmediatePropagation(); if (!event.repeat) togglePause(); return;
+    }
     if (state !== 'playing' || event.target.closest?.('input, select, textarea, a')) return;
     const key = event.key.toLowerCase();
     if (event.target.closest?.('button') && [' ', 'enter'].includes(key)) return;
